@@ -7,9 +7,9 @@ interface AppLayoutProps {
 
 export default function AppLayout({ children, className = '' }: AppLayoutProps) {
   return (
-    <div className={`min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 ${className}`}>
+    <div className={`min-h-screen flex flex-col bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 ${className}`}>
       <Header />
-      <main className="container mx-auto px-6 py-8">
+      <main className="flex-1 container mx-auto px-6 py-8">
         {children}
       </main>
 

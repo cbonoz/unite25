@@ -9,6 +9,14 @@
 
 SwapJar is a crypto-native tip jar generator for creators, freelancers, and DAOs. With one simple link, anyone can send tips in any token — even from non-EVM chains like **Stellar** — and the receiver will automatically get their chosen **stablecoin** (USDC, DAI, etc.) using **1inch Fusion+** swaps.
 
+Example page: http://localhost:3000/tip/bafkreie45x6lgjxn6zgdeyxsmwiaprnol3lmw4rkho2hrh6zwoxaj4354q?created=true
+
+Demo url: https://swapjar.vercel.app
+
+Demo video:
+
+---
+
 <!-- ### Discussion of existing solutions and why they fall short -->
 
 Current tipping solutions in crypto face several critical limitations:
@@ -51,7 +59,7 @@ SwapJar solves these problems by creating a **universal, gasless tipping experie
 
 ## 🚀 Live Demo
 
-[https://swapjar.xyz](https://swapjar.xyz) *(placeholder)*
+[https://swapjar.vercel.app](https://swapjar.vercel.app)
 
 Try sending a tip → watch it get swapped → recipient receives a stablecoin in real time.
 
@@ -92,7 +100,7 @@ Try sending a tip → watch it get swapped → recipient receives a stablecoin i
 
 ### ✨ 1. User Creates a Tip Jar
 - Sets wallet address, preferred stablecoin
-- Generates shareable link (e.g., `https://swapjar.xyz/j/chris`)
+- Generates shareable link (e.g., `https://swapjar.vercel.app/tip/bafkrei...`)
 
 ### 💸 2. Supporter Sends Tip
 - Supports *any* ERC-20 token from Ethereum, Optimism, Base

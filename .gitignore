@@ -15,7 +15,8 @@ pnpm-lock.yaml
 !.yarn/versions
 
 # Environment variables
-.env*
+.env
+.env.prod
 
 # Next.js
 /.next/

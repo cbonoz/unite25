@@ -5,6 +5,8 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import AppLayout from '../components/AppLayout';
 import { SUPPORTED_CHAINS, type ChainId } from '../utils/oneinch';
+import { createTipJar, getTipJarUrl } from '@/app/utils/storage';
+import { siteConfig } from '@/app/siteConfig';
 
 interface FormData {
   displayName: string;
@@ -84,14 +86,23 @@ const CreatePage = () => {
     setIsCreating(true);
 
     try {
-      // Simulate API call to create tip jar
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Create tip jar configuration and store in Storacha
+      const { config, cid } = await createTipJar({
+        name: formData.displayName,
+        description: `${formData.displayName}'s tip jar`,
+        walletAddress: formData.walletAddress,
+        preferredStablecoin: formData.preferredStablecoin,
+        chains: formData.selectedChains,
+        customization: {
+          primaryColor: '#3B82F6', // Default blue
+          backgroundColor: '#F8FAFC', // Default light background
+        }
+      });
 
-      // In a real app, you would save to database/IPFS and get an ID
-      const tipJarId = formData.customUrl || formData.displayName.toLowerCase().replace(/[^a-z0-9]/g, '');
+      console.log('Tip jar created:', { config, cid });
 
-      // Redirect to the new tip jar
-      router.push(`/tip/${tipJarId}?created=true`);
+      // Redirect to the new tip jar using the CID
+      router.push(`/tip/${cid}?created=true`);
     } catch (error) {
       console.error('Error creating tip jar:', error);
       setErrors({ general: 'Failed to create tip jar. Please try again.' });
@@ -208,7 +219,7 @@ const CreatePage = () => {
                     </label>
                     <div className="flex">
                       <span className="inline-flex items-center px-3 rounded-l-lg border border-r-0 border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-600 text-gray-500 dark:text-gray-400 text-sm">
-                        swapjar.xyz/
+                        {siteConfig.appUrl.replace(/^https?:\/\//, '')}/
                       </span>
                       <input
                         type="text"
@@ -283,7 +294,7 @@ const CreatePage = () => {
                 {formData.customUrl && (
                   <div className="mt-4 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
                     <p className="text-sm text-green-700 dark:text-green-300">
-                      <strong>Your URL:</strong> swapjar.xyz/{formData.customUrl}
+                      <strong>Your URL:</strong> {siteConfig.appUrl.replace(/^https?:\/\//, '')}/{formData.customUrl}
                     </p>
                   </div>
                 )}

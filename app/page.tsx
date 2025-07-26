@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import Header from './components/Header';
+import { siteConfig } from './siteConfig';
 
 export default function Home() {
   const { push } = useRouter();
@@ -32,7 +33,7 @@ export default function Home() {
               Create Your Tip Jar
             </button>
             <button
-              onClick={() => push('/tip/demo')}
+              onClick={() => window.open(siteConfig.youtubeUrl, '_blank')}
               className="px-8 py-4 border-2 border-gray-300 text-gray-700 dark:text-gray-300 dark:border-gray-600 rounded-xl hover:border-blue-500 transition-colors text-lg font-semibold"
             >
               View Demo
@@ -99,7 +100,7 @@ export default function Home() {
             <p className="text-xl text-gray-600 dark:text-gray-300 mb-8">
               Create your universal tip jar in seconds. No setup fees, no monthly costs.
             </p>
-            <button 
+            <button
               onClick={goToCreate}
               className="px-12 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all text-lg font-semibold shadow-lg"
             >

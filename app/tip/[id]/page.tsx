@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import AppLayout from '../../components/AppLayout';
 import StellarWallet from '../../components/StellarWallet';
+import { retrieveTipJarConfig, isValidCID } from '@/app/utils/storage';
 import {
   getPopularTokens,
   getTokenPrice,
@@ -50,37 +51,83 @@ export default function TipPage() {
     setTxStatus('success');
   };
 
-  // Mock tip jar data (in real app, fetch from API/database)
+  // Load tip jar data from Storacha using CID
   useEffect(() => {
-    // Simulate loading tip jar data
-    const mockTipJarData: TipJarData = {
-      name: tipJarId ? `${tipJarId}'s Tips` : 'Anonymous Tips',
-      walletAddress: '0x742d35Cc1aC1d4f4d6c0C2c41C5a9e1B1e7AD0A2',
-      preferredStablecoin: 'USDC',
-      chains: [SUPPORTED_CHAINS.ETHEREUM, SUPPORTED_CHAINS.BASE, SUPPORTED_CHAINS.OPTIMISM],
-    };
-    setTipJarData(mockTipJarData);
-  }, [tipJarId]);
+    const loadTipJarData = async () => {
+      if (!tipJarId) return;
 
-  // Load popular tokens for selected chain
-  useEffect(() => {
-    const loadTokens = async () => {
       try {
         setIsLoading(true);
-        const tokens = await getPopularTokens(selectedChain);
-        setAvailableTokens(tokens.slice(0, 10)); // Limit to top 10
-        if (tokens.length > 0 && !selectedToken) {
-          setSelectedToken(tokens[0]);
+        console.log(`🔍 Loading tip jar data for ID: ${tipJarId}`);
+
+        // Validate CID format
+        if (!isValidCID(tipJarId)) {
+          console.error(`❌ Invalid CID format: ${tipJarId}`);
+          setErrorMessage('Invalid tip jar ID format');
+          return;
         }
+
+        console.log(`✅ CID format is valid: ${tipJarId}`);
+
+        // Retrieve tip jar configuration from Storacha
+        console.log(`📡 Retrieving tip jar config from Storacha...`);
+        const config = await retrieveTipJarConfig(tipJarId);
+
+        if (!config) {
+          console.error(`❌ Tip jar config not found for CID: ${tipJarId}`);
+          setErrorMessage('Tip jar not found');
+          return;
+        }
+
+        console.log(`✅ Successfully loaded tip jar config:`, config);
+
+        // Convert the config to the expected TipJarData format
+        const tipJarData: TipJarData = {
+          name: config.name,
+          walletAddress: config.walletAddress,
+          preferredStablecoin: config.preferredStablecoin,
+          chains: config.chains as ChainId[],
+        };
+
+        console.log(`✅ Converted to TipJarData format:`, tipJarData);
+        setTipJarData(tipJarData);
       } catch (error) {
-        console.error('Error loading tokens:', error);
+        console.error('❌ Error loading tip jar:', error);
+        setErrorMessage('Failed to load tip jar configuration');
       } finally {
         setIsLoading(false);
       }
     };
 
-    loadTokens();
-  }, [selectedChain, selectedToken]);
+    loadTipJarData();
+  }, [tipJarId]);
+
+  // Load popular tokens for selected chain
+  useEffect(() => {
+    const loadTokens = async () => {
+      if (!tipJarData) {
+        console.log('⏳ Waiting for tip jar data before loading tokens...');
+        return; // Wait for tip jar data to load first
+      }
+      
+      try {
+        console.log(`🪙 Loading popular tokens for chain ${selectedChain}...`);
+        const tokens = await getPopularTokens(selectedChain);
+        console.log(`✅ Loaded ${tokens.length} tokens:`, tokens.map(t => t.symbol));
+        setAvailableTokens(tokens.slice(0, 10)); // Limit to top 10
+        if (tokens.length > 0 && !selectedToken) {
+          setSelectedToken(tokens[0]);
+          console.log(`🎯 Auto-selected first token: ${tokens[0].symbol}`);
+        }
+      } catch (error) {
+        console.error('❌ Error loading tokens:', error);
+        console.log('🔄 Using fallback tokens due to API error');
+        // Don't prevent the page from rendering - just log the error
+      }
+    };
+
+    loadTokens(); // Always try to load tokens when dependencies change
+  }, [selectedChain, tipJarData]); // Removed selectedToken from dependencies to prevent infinite loop
 
   // Calculate USD value when amount or token changes
   useEffect(() => {
@@ -143,7 +190,7 @@ export default function TipPage() {
     [SUPPORTED_CHAINS.ARBITRUM]: 'Arbitrum',
   };
 
-  if (!tipJarData) {
+  if (isLoading && !tipJarData) {
     return (
       <AppLayout>
         <div className="max-w-2xl mx-auto text-center">
@@ -152,6 +199,45 @@ export default function TipPage() {
             <div className="h-4 bg-gray-300 rounded mb-2"></div>
             <div className="h-4 bg-gray-300 rounded"></div>
           </div>
+          <p className="mt-4 text-gray-600">Loading tip jar...</p>
+        </div>
+      </AppLayout>
+    );
+  }
+
+  if (errorMessage && !tipJarData) {
+    return (
+      <AppLayout>
+        <div className="max-w-2xl mx-auto text-center">
+          <div className="text-red-500 text-6xl mb-4">❌</div>
+          <h1 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">
+            Tip Jar Not Found
+          </h1>
+          <p className="text-gray-600 dark:text-gray-300 mb-4">
+            {errorMessage}
+          </p>
+          <button 
+            onClick={() => window.location.href = '/'}
+            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Go Home
+          </button>
+        </div>
+      </AppLayout>
+    );
+  }
+
+  if (!tipJarData) {
+    return (
+      <AppLayout>
+        <div className="max-w-2xl mx-auto text-center">
+          <div className="text-gray-500 text-6xl mb-4">🤔</div>
+          <h1 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">
+            Tip Jar Not Available
+          </h1>
+          <p className="text-gray-600 dark:text-gray-300">
+            Unable to load tip jar configuration
+          </p>
         </div>
       </AppLayout>
     );
@@ -265,21 +351,31 @@ export default function TipPage() {
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Select Token
                 </label>
-                <select
-                  value={selectedToken?.address || ''}
-                  onChange={(e) => {
-                    const token = availableTokens.find(t => t.address === e.target.value);
-                    setSelectedToken(token || null);
-                  }}
-                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                  disabled={isLoading}
-                >
-                  {availableTokens.map((token) => (
-                    <option key={token.address} value={token.address}>
-                      {token.symbol} - {token.name}
-                    </option>
-                  ))}
-                </select>
+                {availableTokens.length > 0 ? (
+                  <select
+                    value={selectedToken?.address || ''}
+                    onChange={(e) => {
+                      const token = availableTokens.find(t => t.address === e.target.value);
+                      setSelectedToken(token || null);
+                    }}
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                  >
+                    {availableTokens.map((token) => (
+                      <option key={token.address} value={token.address}>
+                        {token.symbol} - {token.name}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <div className="w-full px-4 py-3 border border-orange-300 bg-orange-50 dark:bg-orange-900/20 dark:border-orange-600 rounded-lg text-orange-700 dark:text-orange-300">
+                    <p className="text-sm">
+                      ⚠️ Unable to load token list. API may be temporarily unavailable.
+                    </p>
+                    <p className="text-xs mt-1">
+                      You can still send tips using Stellar cross-chain option above.
+                    </p>
+                  </div>
+                )}
               </div>
 
               {/* Amount Input */}

@@ -1,203 +1,267 @@
-// Storage utilities for tip jar data
-import { ChainId } from './oneinch';
+// Storacha (web3.storage) integration for SwapJar tip jar configurations
+//
+// For production with Storacha, set:
+// 1. NEXT_PUBLIC_STORACHA_PROOF - Base64 encoded proof delegation
+// 2. NEXT_PUBLIC_STORACHA_SPACE - Space name (optional, extracted from proof)
+//
+// To get the proof:
+// 1. Install CLI: npm install -g @storacha/cli
+// 2. Create account: storacha login your@email.com
+// 3. Create space: storacha space create "your-space-name"
+// 4. Get proof: storacha delegation create <space-did> --can 'space/*' --can 'upload/*' --can 'store/*' --output proof.ucan
+// 5. Encode proof: base64 proof.ucan (or use storacha key export)
+//
+import * as Client from '@storacha/client';
+import { StoreMemory } from '@storacha/client/stores/memory';
+import * as Proof from '@storacha/client/proof';
+import { Signer } from '@storacha/client/principal/ed25519';
+import { siteConfig } from '@/app/siteConfig';
 
+// Environment variables for Storacha
+const STORACHA_PROOF = process.env.NEXT_PUBLIC_STORACHA_PROOF;
+const STORACHA_KEY = process.env.NEXT_PUBLIC_STORACHA_KEY;
+
+// Tip jar configuration interface - simplified for read-only storage
 export interface TipJarConfig {
   id: string;
-  displayName: string;
+  name: string;
+  description?: string;
   walletAddress: string;
   preferredStablecoin: 'USDC' | 'DAI' | 'USDT';
-  customUrl: string;
-  selectedChains: ChainId[];
+  chains: number[];
   createdAt: string;
-  totalTips?: number;
-  lastTipAt?: string;
+  isActive: boolean;
+  customization?: {
+    primaryColor?: string;
+    backgroundColor?: string;
+    logoUrl?: string;
+  };
 }
 
-// Local Storage implementation (for demo/client-side storage)
-export class LocalTipJarStorage {
-  private static readonly STORAGE_KEY = 'swapjar_tipjars';
-
-  static saveTipJar(config: Omit<TipJarConfig, 'id' | 'createdAt'>): string {
-    const tipJars = this.getAllTipJars();
-    const id = config.customUrl || config.displayName.toLowerCase().replace(/[^a-z0-9]/g, '');
-
-    const tipJar: TipJarConfig = {
-      ...config,
-      id,
-      createdAt: new Date().toISOString(),
-      totalTips: 0,
-    };
-
-    tipJars[id] = tipJar;
-    localStorage.setItem(this.STORAGE_KEY, JSON.stringify(tipJars));
-    return id;
-  }
-
-  static getTipJar(id: string): TipJarConfig | null {
-    const tipJars = this.getAllTipJars();
-    return tipJars[id] || null;
-  }
-
-  static getAllTipJars(): Record<string, TipJarConfig> {
-    if (typeof window === 'undefined') return {};
-
-    try {
-      const stored = localStorage.getItem(this.STORAGE_KEY);
-      return stored ? JSON.parse(stored) : {};
-    } catch {
-      return {};
+// Store tip jar configuration to Storacha
+export async function storeTipJarConfig(config: TipJarConfig): Promise<string> {
+  try {
+    if (!STORACHA_PROOF) {
+      throw new Error('STORACHA_PROOF environment variable is required');
     }
-  }
 
-  static updateTipJar(id: string, updates: Partial<TipJarConfig>): boolean {
-    const tipJars = this.getAllTipJars();
-    if (!tipJars[id]) return false;
-
-    tipJars[id] = { ...tipJars[id], ...updates };
-    localStorage.setItem(this.STORAGE_KEY, JSON.stringify(tipJars));
-    return true;
-  }
-
-  static incrementTipCount(id: string): void {
-    const tipJar = this.getTipJar(id);
-    if (tipJar) {
-      this.updateTipJar(id, {
-        totalTips: (tipJar.totalTips || 0) + 1,
-        lastTipAt: new Date().toISOString(),
-      });
+    if (!STORACHA_KEY) {
+      throw new Error('STORACHA_KEY environment variable is required');
     }
-  }
-}
 
-// API-based storage (for production with backend)
-export class ApiTipJarStorage {
-  private static readonly BASE_URL = '/api/tipjars';
+    console.log('Creating Storacha client with principal...');
 
-  static async saveTipJar(config: Omit<TipJarConfig, 'id' | 'createdAt'>): Promise<string> {
-    const response = await fetch(this.BASE_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(config),
+    // Load client with specific private key
+    const principal = Signer.parse(STORACHA_KEY);
+    const store = new StoreMemory();
+    const client = await Client.create({ principal, store });
+
+    // Add proof that this agent has been delegated capabilities on the space
+    console.log('Parsing proof...');
+    const proof = await Proof.parse(STORACHA_PROOF);
+
+    console.log('Adding space from proof...');
+    const space = await client.addSpace(proof);
+
+    console.log('Setting current space...');
+    await client.setCurrentSpace(space.did());
+
+    console.log('Using space:', space.did());
+
+    // Verify we have a current space
+    const currentSpace = client.currentSpace();
+    if (!currentSpace) {
+      throw new Error('No current space set after adding proof');
+    }
+
+    console.log('Current space confirmed:', currentSpace.did());
+
+    // Convert config to JSON and create a file
+    const configJson = JSON.stringify(config, null, 2);
+    const file = new File([configJson], `tipjar-${config.id}.json`, {
+      type: 'application/json',
     });
+
+    console.log(`File created: ${file.name}, size: ${file.size} bytes`);
+    console.log('Starting upload...');
+
+    // Upload the file with explicit options
+    const cid = await client.uploadFile(file, {
+      retries: 5,
+      shardSize: 1024 * 1024, // 1MB shards
+    });
+
+    console.log(`Successfully stored tip jar config with CID: ${cid}`);
+    return cid.toString();
+
+  } catch (error) {
+    console.error('Error storing tip jar config:', error);
+
+    // Enhanced error logging
+    if (error instanceof Error) {
+      console.error('Error details:');
+      console.error('- Name:', error.name);
+      console.error('- Message:', error.message);
+      console.error('- Stack:', error.stack);
+
+      // Check for specific error types
+      if (error.message.includes('space/blob/add') || error.message.includes('blob/add')) {
+        console.error('\n🔒 Permission Error Detected:');
+        console.error('Your proof may not have the required capabilities.');
+        console.error('Please ensure your delegation includes:');
+        console.error('- space/*');
+        console.error('- upload/*');
+        console.error('- store/*');
+        console.error('- blob/*');
+      }
+
+      if (error.message.includes('failed space/blob/add invocation')) {
+        console.error('\n🚨 Space/blob/add invocation failed.');
+        console.error('This usually means the space doesn\'t have permission to add blobs.');
+        console.error('Try regenerating your proof with full permissions.');
+      }
+    }
+
+    throw new Error(`Failed to store tip jar config: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+}
+
+// Retrieve tip jar configuration from Storacha using CID
+export async function retrieveTipJarConfig(cid: string): Promise<TipJarConfig | null> {
+  try {
+    console.log(`🔍 Attempting to retrieve tip jar config for CID: ${cid}`);
+    
+    // Use the storacha.link gateway to fetch the content directly
+    const gatewayUrl = `https://${cid}.ipfs.storacha.link`;
+    console.log(`📡 Fetching from gateway: ${gatewayUrl}`);
+
+    const response = await fetch(gatewayUrl, {
+      headers: {
+        'Accept': 'application/json',
+      }
+    });
+
+    console.log(`📊 Response status: ${response.status} ${response.statusText}`);
 
     if (!response.ok) {
-      throw new Error('Failed to save tip jar');
+      if (response.status === 404) {
+        console.warn(`❌ Tip jar config not found for CID: ${cid}`);
+        return null;
+      }
+      throw new Error(`Failed to retrieve data for CID: ${cid} (${response.status})`);
     }
 
-    const { id } = await response.json();
-    return id;
-  }
+    const content = await response.text();
+    console.log(`📄 Retrieved content length: ${content.length} characters`);
+    console.log(`📄 Content preview: ${content.substring(0, 200)}${content.length > 200 ? '...' : ''}`);
 
-  static async getTipJar(id: string): Promise<TipJarConfig | null> {
-    try {
-      const response = await fetch(`${this.BASE_URL}/${id}`);
-      if (!response.ok) return null;
-      return await response.json();
-    } catch {
-      return null;
-    }
-  }
-
-  static async updateTipJar(id: string, updates: Partial<TipJarConfig>): Promise<boolean> {
-    try {
-      const response = await fetch(`${this.BASE_URL}/${id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updates),
-      });
-      return response.ok;
-    } catch {
-      return false;
-    }
-  }
-
-  static async incrementTipCount(id: string): Promise<void> {
-    await fetch(`${this.BASE_URL}/${id}/tip`, {
-      method: 'POST',
+    // Parse and return the configuration
+    const config: TipJarConfig = JSON.parse(content);
+    console.log(`✅ Successfully parsed tip jar config:`, {
+      id: config.id,
+      name: config.name,
+      walletAddress: config.walletAddress,
+      chains: config.chains,
+      preferredStablecoin: config.preferredStablecoin
     });
+    
+    return config;
+  } catch (error) {
+    console.error('❌ Error retrieving tip jar config:', error);
+    if (error instanceof Error) {
+      console.error('Error details:', {
+        name: error.name,
+        message: error.message,
+        stack: error.stack?.split('\n').slice(0, 3).join('\n')
+      });
+    }
+    return null;
   }
 }
 
-// IPFS storage (for decentralized storage)
-export class IPFSTipJarStorage {
-  private static readonly IPFS_GATEWAY = 'https://ipfs.io/ipfs/';
-  private static readonly PIN_SERVICE = 'https://api.pinata.cloud/pinning/pinFileToIPFS';
+// Note: Keeping Storacha simple - create once, read many times
+// No updates or increments to avoid complexity and additional storage costs
 
-  static async saveTipJar(config: Omit<TipJarConfig, 'id' | 'createdAt'>): Promise<string> {
-    const id = config.customUrl || config.displayName.toLowerCase().replace(/[^a-z0-9]/g, '');
+// Create a new tip jar configuration
+export async function createTipJar(data: {
+  name: string;
+  description?: string;
+  walletAddress: string;
+  preferredStablecoin: 'USDC' | 'DAI' | 'USDT';
+  chains: number[];
+  customization?: TipJarConfig['customization'];
+}): Promise<{ config: TipJarConfig; cid: string }> {
+  try {
+    const id = generateTipJarId();
+    const now = new Date().toISOString();
 
-    const tipJar: TipJarConfig = {
-      ...config,
+    const config: TipJarConfig = {
       id,
-      createdAt: new Date().toISOString(),
-      totalTips: 0,
+      name: data.name,
+      description: data.description,
+      walletAddress: data.walletAddress,
+      preferredStablecoin: data.preferredStablecoin,
+      chains: data.chains,
+      createdAt: now,
+      isActive: true,
+      customization: data.customization,
     };
 
-    // In a real implementation, you'd pin to IPFS here
-    // For now, fall back to localStorage
-    return LocalTipJarStorage.saveTipJar(config);
-  }
+    const cid = await storeTipJarConfig(config);
 
-  static async getTipJar(id: string): Promise<TipJarConfig | null> {
-    // In a real implementation, you'd fetch from IPFS
-    // For now, fall back to localStorage
-    return LocalTipJarStorage.getTipJar(id);
+    return { config, cid };
+  } catch (error) {
+    console.error('Error creating tip jar:', error);
+    throw error;
   }
 }
 
-// Main storage interface that can switch between implementations
-export type StorageImplementation = 'local' | 'api' | 'ipfs';
-
-export class TipJarStorage {
-  private static implementation: StorageImplementation = 'local';
-
-  static setImplementation(impl: StorageImplementation) {
-    this.implementation = impl;
-  }
-
-  static async saveTipJar(config: Omit<TipJarConfig, 'id' | 'createdAt'>): Promise<string> {
-    switch (this.implementation) {
-      case 'api':
-        return ApiTipJarStorage.saveTipJar(config);
-      case 'ipfs':
-        return IPFSTipJarStorage.saveTipJar(config);
-      default:
-        return LocalTipJarStorage.saveTipJar(config);
-    }
-  }
-
-  static async getTipJar(id: string): Promise<TipJarConfig | null> {
-    switch (this.implementation) {
-      case 'api':
-        return ApiTipJarStorage.getTipJar(id);
-      case 'ipfs':
-        return IPFSTipJarStorage.getTipJar(id);
-      default:
-        return LocalTipJarStorage.getTipJar(id);
-    }
-  }
-
-  static async updateTipJar(id: string, updates: Partial<TipJarConfig>): Promise<boolean> {
-    switch (this.implementation) {
-      case 'api':
-        return ApiTipJarStorage.updateTipJar(id, updates);
-      case 'ipfs':
-        // IPFS is immutable, so updates would create new entries
-        return false;
-      default:
-        return LocalTipJarStorage.updateTipJar(id, updates);
-    }
-  }
-
-  static async incrementTipCount(id: string): Promise<void> {
-    switch (this.implementation) {
-      case 'api':
-        return ApiTipJarStorage.incrementTipCount(id);
-      case 'ipfs':
-        // IPFS is immutable, so tip counts would need separate tracking
-        return;
-      default:
-        return LocalTipJarStorage.incrementTipCount(id);
-    }
-  }
+// Generate a unique tip jar ID
+function generateTipJarId(): string {
+  const timestamp = Date.now().toString(36);
+  const randomStr = Math.random().toString(36).substring(2, 8);
+  return `${timestamp}-${randomStr}`;
 }
+
+// Validate CID format (basic validation)
+export function isValidCID(cid: string): boolean {
+  // More comprehensive CID validation:
+  // - CIDv0: Qm followed by 44 base58 characters
+  // - CIDv1: baf followed by base32 characters (various lengths)
+  // - Raw CIDv1: bafkrei, bafkreia, etc.
+  // - DAG-PB CIDv1: bafy, bafyb, etc.
+  
+  if (!cid || typeof cid !== 'string') {
+    return false;
+  }
+  
+  // CIDv0 format
+  if (/^Qm[A-Za-z0-9]{44}$/.test(cid)) {
+    return true;
+  }
+  
+  // CIDv1 format - starts with 'baf' and contains base32 characters
+  if (/^baf[a-z2-7]{50,}$/.test(cid)) {
+    return true;
+  }
+  
+  return false;
+}
+
+// Get tip jar URL
+export function getTipJarUrl(cid: string): string {
+  const baseUrl = typeof window !== 'undefined'
+    ? window.location.origin
+    : siteConfig.appUrl;
+
+  return `${baseUrl}/tip/${cid}`;
+}
+
+// Export utility for client-side usage
+export const web3StorageUtils = {
+  storeTipJarConfig,
+  retrieveTipJarConfig,
+  createTipJar,
+  isValidCID,
+  getTipJarUrl,
+};

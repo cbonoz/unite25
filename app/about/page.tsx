@@ -196,7 +196,7 @@ export default function About() {
             <p className="text-xl text-gray-600 dark:text-gray-300 mb-8">
               Create your universal tip jar in seconds. No setup fees, no monthly costs.
             </p>
-            <button 
+            <button
               onClick={() => push('/create')}
               className="px-12 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all text-lg font-semibold shadow-lg"
             >
