@@ -17,16 +17,10 @@ export default function Header() {
 
           <div className="hidden md:flex items-center space-x-8">
             <Link
-              href="/#how-it-works"
+              href="/about"
               className="text-gray-600 hover:text-gray-800 dark:text-gray-300 dark:hover:text-white transition-colors"
             >
-              How it Works
-            </Link>
-            <Link
-              href="/#features"
-              className="text-gray-600 hover:text-gray-800 dark:text-gray-300 dark:hover:text-white transition-colors"
-            >
-              Features
+              About
             </Link>
             <Link
               href="/docs"

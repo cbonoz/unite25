@@ -40,7 +40,7 @@ export default function StellarWallet({
       } else {
         setError('Please enter your Stellar secret key');
       }
-    } catch (err) {
+    } catch {
       setError('Invalid Stellar secret key');
     }
   };

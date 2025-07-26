@@ -1,4 +1,4 @@
-import { TipJarConfig } from '../utils/storage';
+import { TipJarConfig } from './storage';
 
 // Shared in-memory storage for demo
 // In production, this would be replaced with a database

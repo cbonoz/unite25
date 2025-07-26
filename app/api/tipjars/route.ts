@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { TipJarConfig } from '../../utils/storage';
-import { tipJarStore } from '../../lib/store';
+import { tipJarStore } from '../../utils/store';
 
 export async function POST(request: NextRequest) {
   try {

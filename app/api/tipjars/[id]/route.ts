@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { tipJarStore } from '../../../lib/store';
+import { tipJarStore } from '../../../utils/store';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
 
     const tipJar = tipJarStore.getTipJar(id);
 
@@ -32,10 +32,10 @@ export async function GET(
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const updates = await request.json();
 
     const updatedTipJar = tipJarStore.updateTipJar(id, updates);

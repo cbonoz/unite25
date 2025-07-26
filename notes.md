@@ -134,13 +134,8 @@ We built a **Fusion+ extension** that allows users on **Stellar** to tip EVM use
 
 ```bash
 /apps
-  /swap-jar    # Next.js dApp
-  # /backend     # Fastify backend for relayer + monitoring
-/libs
-  /1inch       # Abstractions for API integration
-  /stellar     # Stellar SDK integration
-/scripts
-  /bridge-watcher.js
+  /    # Next.js dApp
+/app/utils # Abstractions for 1inch and swap API integration
 ```
 
 ### Useful links
