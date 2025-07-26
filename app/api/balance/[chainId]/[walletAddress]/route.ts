@@ -9,7 +9,7 @@ export async function GET(
 ) {
   try {
     const { chainId, walletAddress } = await params;
-    
+
     const response = await fetch(`${BASE_URL}/balance/v1.2/${chainId}/${walletAddress}?provider=1inch`, {
       headers: {
         'Authorization': `Bearer ${API_KEY}`,
@@ -22,7 +22,7 @@ export async function GET(
     }
 
     const data = await response.json();
-    
+
     return NextResponse.json(data);
   } catch (error) {
     console.error('Error fetching wallet balances:', error);

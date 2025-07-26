@@ -130,7 +130,7 @@ export async function storeTipJarConfig(config: TipJarConfig): Promise<string> {
 export async function retrieveTipJarConfig(cid: string): Promise<TipJarConfig | null> {
   try {
     console.log(`🔍 Attempting to retrieve tip jar config for CID: ${cid}`);
-    
+
     // Use the storacha.link gateway to fetch the content directly
     const gatewayUrl = `https://${cid}.ipfs.storacha.link`;
     console.log(`📡 Fetching from gateway: ${gatewayUrl}`);
@@ -164,7 +164,7 @@ export async function retrieveTipJarConfig(cid: string): Promise<TipJarConfig | 
       chains: config.chains,
       preferredStablecoin: config.preferredStablecoin
     });
-    
+
     return config;
   } catch (error) {
     console.error('❌ Error retrieving tip jar config:', error);
@@ -230,21 +230,21 @@ export function isValidCID(cid: string): boolean {
   // - CIDv1: baf followed by base32 characters (various lengths)
   // - Raw CIDv1: bafkrei, bafkreia, etc.
   // - DAG-PB CIDv1: bafy, bafyb, etc.
-  
+
   if (!cid || typeof cid !== 'string') {
     return false;
   }
-  
+
   // CIDv0 format
   if (/^Qm[A-Za-z0-9]{44}$/.test(cid)) {
     return true;
   }
-  
+
   // CIDv1 format - starts with 'baf' and contains base32 characters
   if (/^baf[a-z2-7]{50,}$/.test(cid)) {
     return true;
   }
-  
+
   return false;
 }
 

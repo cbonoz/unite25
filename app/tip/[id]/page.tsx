@@ -4,11 +4,13 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import AppLayout from '../../components/AppLayout';
 import StellarWallet from '../../components/StellarWallet';
+import { useWallet } from '../../hooks/useWallet';
 import { retrieveTipJarConfig, isValidCID } from '@/app/utils/storage';
 import {
   getPopularTokens,
   getTokenPrice,
-  createTipSwap,
+  createFusionOrder,
+  getFusionOrderStatus,
   SUPPORTED_CHAINS,
   type Token,
   type ChainId
@@ -31,6 +33,15 @@ interface StellarTipResult {
 export default function TipPage() {
   const params = useParams();
   const tipJarId = params?.id as string;
+  const {
+    address,
+    chainId: walletChainId,
+    isConnected,
+    isConnecting,
+    connectWallet,
+    switchNetwork,
+    signer
+  } = useWallet();
 
   // State
   const [tipJarData, setTipJarData] = useState<TipJarData | null>(null);
@@ -44,6 +55,8 @@ export default function TipPage() {
   const [errorMessage, setErrorMessage] = useState('');
   const [stellarTips, setStellarTips] = useState<StellarTipResult[]>([]);
   const [showStellarOption, setShowStellarOption] = useState(false);
+  const [orderHash, setOrderHash] = useState<string>('');
+  const [isProcessing, setIsProcessing] = useState(false);
 
   // Handler for stellar tips
   const handleStellarTip = (result: StellarTipResult) => {
@@ -109,7 +122,7 @@ export default function TipPage() {
         console.log('⏳ Waiting for tip jar data before loading tokens...');
         return; // Wait for tip jar data to load first
       }
-      
+
       try {
         console.log(`🪙 Loading popular tokens for chain ${selectedChain}...`);
         const tokens = await getPopularTokens(selectedChain);
@@ -150,35 +163,129 @@ export default function TipPage() {
   }, [selectedToken, tipAmount, selectedChain]);
 
   const handleSendTip = async () => {
-    if (!selectedToken || !tipAmount || !tipJarData) return;
+    if (!selectedToken || !tipAmount || !tipJarData || !address) {
+      setErrorMessage('Please connect wallet and enter tip amount');
+      return;
+    }
+
+    // Check if wallet is on correct chain
+    if (walletChainId !== selectedChain) {
+      try {
+        await switchNetwork(selectedChain);
+      } catch (error) {
+        setErrorMessage('Please switch to the correct network');
+        return;
+      }
+    }
 
     try {
       setIsLoading(true);
       setTxStatus('pending');
       setErrorMessage('');
+      setIsProcessing(true);
+
+      console.log('🚀 Starting Fusion+ tip process...', {
+        selectedToken: selectedToken.symbol,
+        tipAmount,
+        chain: selectedChain,
+        recipient: tipJarData.walletAddress
+      });
 
       // Convert tip amount to wei/smallest unit
       const amountInWei = (parseFloat(tipAmount) * Math.pow(10, selectedToken.decimals)).toString();
 
-      const result = await createTipSwap(
-        selectedChain,
-        selectedToken.address,
-        amountInWei,
-        tipJarData.walletAddress,
-        tipJarData.preferredStablecoin
+      // Get the stablecoin address for the target chain
+      const stablecoins = await getPopularTokens(selectedChain);
+      const targetStablecoin = stablecoins.find(token =>
+        token.symbol === tipJarData.preferredStablecoin
       );
 
-      if (result.success) {
+      if (!targetStablecoin) {
+        throw new Error(`${tipJarData.preferredStablecoin} not available on this chain`);
+      }
+
+      console.log('💱 Creating swap transaction...', {
+        fromToken: selectedToken.address,
+        toToken: targetStablecoin.address,
+        amount: amountInWei,
+        userAddress: address,
+        receiverAddress: tipJarData.walletAddress
+      });
+
+      // Create swap transaction via 1inch API
+      const swapOrder = await createFusionOrder(
+        selectedChain,
+        selectedToken.address,
+        targetStablecoin.address,
+        amountInWei,
+        address,
+        tipJarData.walletAddress
+      );
+
+      console.log('✅ Swap transaction prepared:', swapOrder);
+
+      if (!swapOrder.transaction || !signer) {
+        throw new Error('Unable to prepare transaction or get signer');
+      }
+
+      // Execute the transaction using the wallet signer
+      console.log('📝 Sending transaction...', {
+        to: swapOrder.transaction.to,
+        value: swapOrder.transaction.value,
+        data: swapOrder.transaction.data,
+      });
+
+      const txResponse = await signer.sendTransaction({
+        to: swapOrder.transaction.to,
+        value: swapOrder.transaction.value || '0',
+        data: swapOrder.transaction.data,
+        gasLimit: swapOrder.transaction.gas || '500000',
+      });
+
+      console.log('⏳ Transaction sent, waiting for confirmation...', txResponse.hash);
+      setOrderHash(txResponse.hash);
+
+      // Wait for transaction confirmation
+      const receipt = await txResponse.wait();
+      
+      if (!receipt) {
+        throw new Error('Transaction receipt not available');
+      }
+      
+      console.log('✅ Transaction confirmed!', {
+        hash: receipt.hash,
+        blockNumber: receipt.blockNumber,
+        status: receipt.status,
+      });
+
+      if (receipt.status === 1) {
         setTxStatus('success');
       } else {
-        setTxStatus('error');
-        setErrorMessage(result.error || 'Failed to create tip swap');
+        throw new Error('Transaction failed');
       }
     } catch (error) {
+      console.error('❌ Error sending tip:', error);
       setTxStatus('error');
       setErrorMessage(error instanceof Error ? error.message : 'Unknown error occurred');
     } finally {
       setIsLoading(false);
+      setIsProcessing(false);
+    }
+  };
+
+  const checkOrderStatus = async (hash: string) => {
+    try {
+      const status = await getFusionOrderStatus(selectedChain, hash);
+      console.log('📊 Order status:', status);
+
+      if (status.status === 'filled') {
+        console.log('✅ Order completed successfully!');
+      } else if (status.status === 'pending') {
+        // Check again in 10 seconds
+        setTimeout(() => checkOrderStatus(hash), 10000);
+      }
+    } catch (error) {
+      console.error('❌ Error checking order status:', error);
     }
   };
 
@@ -216,7 +323,7 @@ export default function TipPage() {
           <p className="text-gray-600 dark:text-gray-300 mb-4">
             {errorMessage}
           </p>
-          <button 
+          <button
             onClick={() => window.location.href = '/'}
             className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
@@ -295,6 +402,19 @@ export default function TipPage() {
                 Your tip is being processed via 1inch Fusion+. The recipient will receive {tipJarData.preferredStablecoin} shortly.
               </p>
 
+              {/* Order Details */}
+              {orderHash && (
+                <div className="mb-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                  <h3 className="font-semibold text-green-800 dark:text-green-200 mb-2">
+                    🔗 Fusion+ Order Details
+                  </h3>
+                  <div className="text-sm text-green-700 dark:text-green-300">
+                    <p><strong>Order Hash:</strong></p>
+                    <p className="font-mono text-xs break-all">{orderHash}</p>
+                  </div>
+                </div>
+              )}
+
               {/* Show Stellar tip details if it was a cross-chain tip */}
               {stellarTips.length > 0 && (
                 <div className="mb-6 p-4 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg">
@@ -316,6 +436,7 @@ export default function TipPage() {
                   setTxStatus('idle');
                   setTipAmount('');
                   setUsdValue(0);
+                  setOrderHash('');
                 }}
                 className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
               >
@@ -324,6 +445,47 @@ export default function TipPage() {
             </div>
           ) : (
             <>
+              {/* Wallet Connection */}
+              {!isConnected ? (
+                <div className="mb-6 text-center">
+                  <div className="text-4xl mb-4">🔗</div>
+                  <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-2">
+                    Connect Your Wallet
+                  </h3>
+                  <p className="text-gray-600 dark:text-gray-300 mb-4">
+                    Connect your wallet to send tips via 1inch Fusion+
+                  </p>
+                  <button
+                    onClick={connectWallet}
+                    disabled={isConnecting}
+                    className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold disabled:opacity-50"
+                  >
+                    {isConnecting ? 'Connecting...' : 'Connect Wallet'}
+                  </button>
+                </div>
+              ) : (
+                <div className="mb-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-green-800 dark:text-green-200">
+                        ✅ Wallet Connected
+                      </p>
+                      <p className="text-xs text-green-600 dark:text-green-400 font-mono">
+                        {address?.slice(0, 6)}...{address?.slice(-4)}
+                      </p>
+                    </div>
+                    {walletChainId !== selectedChain && (
+                      <button
+                        onClick={() => switchNetwork(selectedChain)}
+                        className="px-3 py-1 bg-orange-500 text-white text-xs rounded hover:bg-orange-600 transition-colors"
+                      >
+                        Switch Network
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+
               {/* Chain Selection */}
               <div className="mb-6">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -412,10 +574,25 @@ export default function TipPage() {
               {/* Send Button */}
               <button
                 onClick={handleSendTip}
-                disabled={!selectedToken || !tipAmount || parseFloat(tipAmount) <= 0 || isLoading}
+                disabled={
+                  !isConnected ||
+                  !selectedToken ||
+                  !tipAmount ||
+                  parseFloat(tipAmount) <= 0 ||
+                  isLoading ||
+                  isProcessing ||
+                  (walletChainId !== selectedChain)
+                }
                 className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {txStatus === 'pending' ? 'Processing...' : 'Send Tip'}
+                {!isConnected
+                  ? 'Connect Wallet First'
+                  : walletChainId !== selectedChain
+                  ? 'Switch Network Required'
+                  : txStatus === 'pending' || isProcessing
+                  ? 'Creating Fusion+ Order...'
+                  : 'Send Tip via Fusion+'
+                }
               </button>
 
               {/* Info Box */}

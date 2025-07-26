@@ -48,8 +48,18 @@ export interface Protocol {
 export interface FusionOrder {
   orderHash: string;
   signature: string;
-  order: OrderData;
+  order?: OrderData;
   quoteId?: string;
+  transaction?: {
+    to: string;
+    value?: string;
+    data: string;
+    gas?: string;
+    gasPrice?: string;
+  };
+  quote?: SwapQuote;
+  toAmount?: string;
+  estimatedGas?: string;
 }
 
 export interface TokenData {
@@ -152,7 +162,7 @@ function getFallbackTokens(chainId: ChainId): Token[] {
       { address: '0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1', symbol: 'DAI', name: 'Dai Stablecoin', decimals: 18 },
     ],
   };
-  
+
   return fallbackTokens[chainId] || fallbackTokens[SUPPORTED_CHAINS.ETHEREUM];
 }
 
@@ -244,18 +254,42 @@ export async function createFusionOrder(
   receiverAddress?: string
 ): Promise<FusionOrder> {
   try {
-    const orderData = {
-      srcToken: fromToken,
-      dstToken: toToken,
-      srcAmount: amount,
-      dstReceiver: receiverAddress || userAddress,
-      srcReceiver: userAddress,
-    };
-
-    const data = await apiRequest(`/fusion/v1.0/${chainId}/order`, {
-      method: 'POST',
-      body: JSON.stringify(orderData),
+    console.log('🔄 Creating Fusion+ order via API:', {
+      chainId,
+      fromToken,
+      toToken,
+      amount,
+      userAddress,
+      receiverAddress
     });
+
+    const response = await fetch('/api/fusion/order', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        chainId,
+        srcToken: fromToken,
+        dstToken: toToken,
+        srcAmount: amount,
+        walletAddress: userAddress,
+        receiverAddress: receiverAddress || userAddress,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to create Fusion+ order');
+    }
+
+    const data = await response.json();
+
+    if (!data.success) {
+      throw new Error(data.error || 'Fusion+ order creation failed');
+    }
+
+    console.log('✅ Fusion+ order created successfully:', data);
 
     return {
       orderHash: data.orderHash,
@@ -264,16 +298,23 @@ export async function createFusionOrder(
       quoteId: data.quoteId,
     };
   } catch (error) {
-    console.error('Error creating Fusion+ order:', error);
+    console.error('❌ Error creating Fusion+ order:', error);
     throw error;
   }
 }
 
 export async function getFusionOrderStatus(chainId: ChainId, orderHash: string) {
   try {
-    return await apiRequest(`/fusion/v1.0/${chainId}/order/status/${orderHash}`);
+    const response = await fetch(`/api/fusion/status/${chainId}/${orderHash}`);
+
+    if (!response.ok) {
+      throw new Error(`Failed to get order status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data;
   } catch (error) {
-    console.error('Error fetching Fusion+ order status:', error);
+    console.error('❌ Error fetching Fusion+ order status:', error);
     throw error;
   }
 }

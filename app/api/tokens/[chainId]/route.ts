@@ -9,7 +9,7 @@ export async function GET(
 ) {
   try {
     const { chainId } = await params;
-    
+
     const response = await fetch(`${BASE_URL}/token/v1.3/${chainId}?provider=1inch`, {
       headers: {
         'Authorization': `Bearer ${API_KEY}`,
