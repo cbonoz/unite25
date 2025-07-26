@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import AppLayout from '../../components/AppLayout';
+import StellarWallet from '../../components/StellarWallet';
 import {
   getPopularTokens,
   getTokenPrice,
@@ -19,6 +20,13 @@ interface TipJarData {
   chains: ChainId[];
 }
 
+interface StellarTipResult {
+  swapId: string;
+  stellarTxId: string;
+  amount: string;
+  asset: string;
+}
+
 export default function TipPage() {
   const params = useParams();
   const tipJarId = params?.id as string;
@@ -33,6 +41,14 @@ export default function TipPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [txStatus, setTxStatus] = useState<'idle' | 'pending' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
+  const [stellarTips, setStellarTips] = useState<StellarTipResult[]>([]);
+  const [showStellarOption, setShowStellarOption] = useState(false);
+
+  // Handler for stellar tips
+  const handleStellarTip = (result: StellarTipResult) => {
+    setStellarTips(prev => [...prev, result]);
+    setTxStatus('success');
+  };
 
   // Mock tip jar data (in real app, fetch from API/database)
   useEffect(() => {
@@ -156,7 +172,33 @@ export default function TipPage() {
         </div>
 
         {/* Tip Form */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8">
+        <div className="space-y-6">
+          {/* Fusion+ Extension Banner */}
+          <div className="bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-xl p-4 text-center">
+            <h2 className="text-xl font-bold mb-2">🌟 NEW: Stellar Cross-Chain Tips</h2>
+            <p className="text-sm opacity-90">
+              First-ever Fusion+ extension enabling Stellar → Ethereum atomic swaps with hashlock/timelock
+            </p>
+            <button
+              onClick={() => setShowStellarOption(!showStellarOption)}
+              className="mt-2 px-4 py-1 bg-white/20 rounded-lg text-sm hover:bg-white/30 transition-colors"
+            >
+              {showStellarOption ? 'Hide Stellar Option' : 'Try Stellar Tips →'}
+            </button>
+          </div>
+
+          {/* Stellar Option */}
+          {showStellarOption && (
+            <StellarWallet
+              onTipSent={handleStellarTip}
+              recipientAddress={tipJarData.walletAddress}
+              preferredStablecoin={tipJarData.preferredStablecoin}
+              tipJarId={tipJarId}
+            />
+          )}
+
+          {/* Traditional EVM Tips */}
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8">
           {txStatus === 'success' ? (
             <div className="text-center">
               <div className="text-green-500 text-5xl mb-4">✅</div>
@@ -166,6 +208,23 @@ export default function TipPage() {
               <p className="text-gray-600 dark:text-gray-300 mb-6">
                 Your tip is being processed via 1inch Fusion+. The recipient will receive {tipJarData.preferredStablecoin} shortly.
               </p>
+
+              {/* Show Stellar tip details if it was a cross-chain tip */}
+              {stellarTips.length > 0 && (
+                <div className="mb-6 p-4 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg">
+                  <h3 className="font-semibold text-purple-800 dark:text-purple-200 mb-2">
+                    🌉 Cross-Chain Swap Details
+                  </h3>
+                  {stellarTips.map((tip, index) => (
+                    <div key={index} className="text-sm text-purple-700 dark:text-purple-300">
+                      <p><strong>Amount:</strong> {tip.amount} {tip.asset}</p>
+                      <p><strong>Swap ID:</strong> {tip.swapId}</p>
+                      <p><strong>Stellar Tx:</strong> {tip.stellarTxId}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+
               <button
                 onClick={() => {
                   setTxStatus('idle');
@@ -277,6 +336,7 @@ export default function TipPage() {
               </div>
             </>
           )}
+        </div>
         </div>
       </div>
     </AppLayout>
