@@ -4,6 +4,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import AppLayout from '../components/AppLayout';
+import TipJarSuccess from '../components/TipJarSuccess';
 import { SUPPORTED_CHAINS, type ChainId } from '../utils/oneinch';
 import { createTipJar, getTipJarUrl } from '@/app/utils/storage';
 import { siteConfig } from '@/app/siteConfig';
@@ -14,6 +15,18 @@ interface FormData {
   preferredStablecoin: 'USDC' | 'DAI' | 'USDT';
   customUrl: string;
   selectedChains: ChainId[];
+  customMessage: string;
+}
+
+interface CreatedTipJar {
+  id: string;
+  data: {
+    name: string;
+    walletAddress: string;
+    preferredStablecoin: 'USDC' | 'DAI' | 'USDT';
+    chains: ChainId[];
+    customMessage: string;
+  };
 }
 
 const CreatePage = () => {
@@ -24,9 +37,11 @@ const CreatePage = () => {
     preferredStablecoin: 'USDC',
     customUrl: '',
     selectedChains: [SUPPORTED_CHAINS.ETHEREUM],
+    customMessage: '',
   });
   const [isCreating, setIsCreating] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [createdTipJar, setCreatedTipJar] = useState<CreatedTipJar | null>(null);
 
   const chainOptions = [
     { id: SUPPORTED_CHAINS.ETHEREUM, name: 'Ethereum', color: 'bg-blue-500' },
@@ -93,6 +108,7 @@ const CreatePage = () => {
         walletAddress: formData.walletAddress,
         preferredStablecoin: formData.preferredStablecoin,
         chains: formData.selectedChains,
+        customMessage: formData.customMessage || `Send tips in any token, I'll receive ${formData.preferredStablecoin}`,
         customization: {
           primaryColor: '#3B82F6', // Default blue
           backgroundColor: '#F8FAFC', // Default light background
@@ -101,8 +117,17 @@ const CreatePage = () => {
 
       console.log('Tip jar created:', { config, cid });
 
-      // Redirect to the new tip jar using the CID
-      router.push(`/tip/${cid}?created=true`);
+      // Show success component instead of redirecting
+      setCreatedTipJar({
+        id: cid,
+        data: {
+          name: formData.displayName,
+          walletAddress: formData.walletAddress,
+          preferredStablecoin: formData.preferredStablecoin,
+          chains: formData.selectedChains,
+          customMessage: formData.customMessage,
+        }
+      });
     } catch (error) {
       console.error('Error creating tip jar:', error);
       setErrors({ general: 'Failed to create tip jar. Please try again.' });
@@ -111,17 +136,37 @@ const CreatePage = () => {
     }
   };
 
+  const handleCreateAnother = () => {
+    setCreatedTipJar(null);
+    setFormData({
+      displayName: '',
+      walletAddress: '',
+      preferredStablecoin: 'USDC',
+      customUrl: '',
+      selectedChains: [SUPPORTED_CHAINS.ETHEREUM],
+      customMessage: '',
+    });
+    setErrors({});
+  };
+
   return (
     <AppLayout>
-      <div className="max-w-4xl mx-auto">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-800 dark:text-white mb-4">
-            Create Your SwapJar
-          </h1>
-          <p className="text-xl text-gray-600 dark:text-gray-300">
-            Set up your universal tip jar in just a few steps
-          </p>
-        </div>
+      {createdTipJar ? (
+        <TipJarSuccess
+          tipJarId={createdTipJar.id}
+          tipJarData={createdTipJar.data}
+          onCreateAnother={handleCreateAnother}
+        />
+      ) : (
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-8">
+            <h1 className="text-4xl font-bold text-gray-800 dark:text-white mb-4">
+              Create Your SwapJar
+            </h1>
+            <p className="text-xl text-gray-600 dark:text-gray-300">
+              Set up your universal tip jar in just a few steps
+            </p>
+          </div>
 
         <form onSubmit={handleSubmit}>
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8">
@@ -189,6 +234,22 @@ const CreatePage = () => {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Custom Message (Optional)
+                    </label>
+                    <textarea
+                      value={formData.customMessage}
+                      onChange={(e) => handleInputChange('customMessage', e.target.value)}
+                      placeholder={`Send tips in any token, I'll receive ${formData.preferredStablecoin}`}
+                      rows={3}
+                      className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white resize-none"
+                    />
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                      This message will be displayed on your tip jar page. Leave blank to use default.
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Supported Blockchains *
                     </label>
                     <div className="grid grid-cols-2 gap-2">
@@ -213,28 +274,7 @@ const CreatePage = () => {
                     )}
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Custom URL (Optional)
-                    </label>
-                    <div className="flex">
-                      <span className="inline-flex items-center px-3 rounded-l-lg border border-r-0 border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-600 text-gray-500 dark:text-gray-400 text-sm">
-                        {siteConfig.appUrl.replace(/^https?:\/\//, '')}/
-                      </span>
-                      <input
-                        type="text"
-                        value={formData.customUrl}
-                        onChange={(e) => handleInputChange('customUrl', e.target.value)}
-                        placeholder="yourname"
-                        className={`flex-1 px-4 py-3 border rounded-r-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white ${
-                          errors.customUrl ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-                        }`}
-                      />
-                    </div>
-                    {errors.customUrl && (
-                      <p className="text-red-500 text-sm mt-1">{errors.customUrl}</p>
-                    )}
-                  </div>
+
                 </div>
 
                 {errors.general && (
@@ -265,7 +305,7 @@ const CreatePage = () => {
                       {formData.displayName || 'Your Tips'}
                     </h3>
                     <p className="text-gray-600 dark:text-gray-300 mb-4">
-                      Send tips in any token, I&apos;ll receive {formData.preferredStablecoin}
+                      {formData.customMessage || `Send tips in any token, I'll receive ${formData.preferredStablecoin}`}
                     </p>
                     <div className="space-y-2">
                       <button className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg text-sm">
@@ -302,7 +342,8 @@ const CreatePage = () => {
             </div>
           </div>
         </form>
-      </div>
+        </div>
+      )}
     </AppLayout>
   );
 }

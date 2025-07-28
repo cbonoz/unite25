@@ -31,6 +31,7 @@ export interface TipJarConfig {
   chains: number[];
   createdAt: string;
   isActive: boolean;
+  customMessage?: string;
   customization?: {
     primaryColor?: string;
     backgroundColor?: string;
@@ -189,6 +190,7 @@ export async function createTipJar(data: {
   walletAddress: string;
   preferredStablecoin: 'USDC' | 'DAI' | 'USDT';
   chains: number[];
+  customMessage?: string;
   customization?: TipJarConfig['customization'];
 }): Promise<{ config: TipJarConfig; cid: string }> {
   try {
@@ -204,6 +206,7 @@ export async function createTipJar(data: {
       chains: data.chains,
       createdAt: now,
       isActive: true,
+      customMessage: data.customMessage,
       customization: data.customization,
     };
 

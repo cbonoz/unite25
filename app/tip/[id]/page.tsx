@@ -21,6 +21,7 @@ interface TipJarData {
   walletAddress: string;
   preferredStablecoin: 'USDC' | 'DAI' | 'USDT';
   chains: ChainId[];
+  customMessage?: string;
 }
 
 interface StellarTipResult {
@@ -100,6 +101,7 @@ export default function TipPage() {
           walletAddress: config.walletAddress,
           preferredStablecoin: config.preferredStablecoin,
           chains: config.chains as ChainId[],
+          customMessage: config.customMessage,
         };
 
         console.log(`✅ Converted to TipJarData format:`, tipJarData);
@@ -247,11 +249,11 @@ export default function TipPage() {
 
       // Wait for transaction confirmation
       const receipt = await txResponse.wait();
-      
+
       if (!receipt) {
         throw new Error('Transaction receipt not available');
       }
-      
+
       console.log('✅ Transaction confirmed!', {
         hash: receipt.hash,
         blockNumber: receipt.blockNumber,
@@ -297,7 +299,7 @@ export default function TipPage() {
     [SUPPORTED_CHAINS.ARBITRUM]: 'Arbitrum',
   };
 
-  if (isLoading && !tipJarData) {
+  if (isLoading) {
     return (
       <AppLayout>
         <div className="max-w-2xl mx-auto text-center">
@@ -312,7 +314,7 @@ export default function TipPage() {
     );
   }
 
-  if (errorMessage && !tipJarData) {
+  if (errorMessage) {
     return (
       <AppLayout>
         <div className="max-w-2xl mx-auto text-center">
@@ -360,7 +362,7 @@ export default function TipPage() {
             {tipJarData.name}
           </h1>
           <p className="text-gray-600 dark:text-gray-300">
-            Send tips in any token, I&apos;ll receive {tipJarData.preferredStablecoin}
+            {tipJarData.customMessage || `Send tips in any token, I'll receive ${tipJarData.preferredStablecoin}`}
           </p>
         </div>
 
