@@ -10,6 +10,7 @@ export const SUPPORTED_CHAINS = {
   OPTIMISM: 10,
   POLYGON: 137,
   ARBITRUM: 42161,
+  STELLAR: 'stellar' as const, // Special case for Stellar network
 } as const;
 
 export type ChainId = typeof SUPPORTED_CHAINS[keyof typeof SUPPORTED_CHAINS];
@@ -24,9 +25,12 @@ export interface Token {
 }
 
 export interface Balance {
-  token: Token;
+  tokenAddress: string;
   balance: string;
-  balanceUSD?: string;
+  decimals: number;
+  symbol: string;
+  name: string;
+  logoURI?: string;
 }
 
 export interface SwapQuote {
@@ -161,6 +165,10 @@ function getFallbackTokens(chainId: ChainId): Token[] {
       { address: '0xaf88d065e77c8cC2239327C5EDb3A432268e5831', symbol: 'USDC', name: 'USD Coin', decimals: 6 },
       { address: '0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1', symbol: 'DAI', name: 'Dai Stablecoin', decimals: 18 },
     ],
+    [SUPPORTED_CHAINS.STELLAR]: [
+      { address: 'native', symbol: 'XLM', name: 'Stellar Lumens', decimals: 7 },
+      { address: 'GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5', symbol: 'USDC', name: 'USD Coin', decimals: 7 },
+    ],
   };
 
   return fallbackTokens[chainId] || fallbackTokens[SUPPORTED_CHAINS.ETHEREUM];
@@ -201,11 +209,64 @@ export async function calculateTipValue(
 }
 
 // 3. Balance API
-export async function getWalletBalances(chainId: ChainId, walletAddress: string): Promise<Record<string, string>> {
+// Get wallet token balances (1inch Balances API)
+export async function getWalletBalances(chainId: number, walletAddress: string): Promise<Balance[]> {
   try {
-    return await apiRequest(`/balance/${chainId}/${walletAddress}`);
+    console.log(`🔍 Fetching wallet balances for ${walletAddress} on chain ${chainId}`);
+
+    const response = await fetch(
+      `https://api.1inch.dev/balance/v1.2/${chainId}/balances/${walletAddress}`,
+      {
+        headers: {
+          'Authorization': `Bearer ${process.env.NEXT_PUBLIC_1INCH_API_KEY}`,
+          'accept': 'application/json',
+        },
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log('💰 Raw balance data:', data);
+
+    // Convert the balances record to an array of Balance objects
+    const balances: Balance[] = [];
+
+    for (const [tokenAddress, balance] of Object.entries(data)) {
+      if (typeof balance === 'string' && balance !== '0') {
+        try {
+          // Get token metadata for each token with balance
+          const tokenInfo = await getTokenMetadata(chainId as ChainId, tokenAddress);
+
+          balances.push({
+            tokenAddress,
+            balance,
+            decimals: tokenInfo.decimals,
+            symbol: tokenInfo.symbol,
+            name: tokenInfo.name,
+            logoURI: tokenInfo.logoURI,
+          });
+        } catch (error) {
+          console.warn(`⚠️ Failed to get metadata for token ${tokenAddress}:`, error);
+          // Still include the balance even without metadata
+          balances.push({
+            tokenAddress,
+            balance,
+            decimals: 18, // Default to 18 decimals
+            symbol: tokenAddress.slice(0, 8), // Use truncated address as symbol
+            name: 'Unknown Token',
+            logoURI: '',
+          });
+        }
+      }
+    }
+
+    console.log(`✅ Processed ${balances.length} token balances`);
+    return balances;
   } catch (error) {
-    console.error('Error fetching wallet balances:', error);
+    console.error('❌ Error fetching wallet balances:', error);
     throw error;
   }
 }
@@ -319,7 +380,33 @@ export async function getFusionOrderStatus(chainId: ChainId, orderHash: string) 
   }
 }
 
-// 6. Helper functions for SwapJar
+// 7. Token Allowance API
+export async function getTokenAllowance(
+  chainId: ChainId,
+  tokenAddress: string,
+  walletAddress: string,
+  spenderAddress: string
+): Promise<string> {
+  try {
+    console.log('🔍 Checking token allowance:', {
+      chainId, tokenAddress, walletAddress, spenderAddress
+    });
+
+    const response = await fetch(`/api/allowance/${chainId}/${tokenAddress}?wallet=${walletAddress}&spender=${spenderAddress}`);
+
+    if (!response.ok) {
+      throw new Error(`Failed to get token allowance: ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log('✅ Token allowance fetched:', data.allowance);
+
+    return data.allowance || '0';
+  } catch (error) {
+    console.error('❌ Error fetching token allowance:', error);
+    return '0';
+  }
+}// 6. Helper functions for SwapJar
 export async function getStablecoinAddress(chainId: ChainId, stablecoin: 'USDC' | 'DAI' | 'USDT'): Promise<string> {
   const stablecoinAddresses: Record<ChainId, Record<string, string>> = {
     [SUPPORTED_CHAINS.ETHEREUM]: {
@@ -347,6 +434,11 @@ export async function getStablecoinAddress(chainId: ChainId, stablecoin: 'USDC' 
       DAI: '0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1',
       USDT: '0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9',
     },
+    [SUPPORTED_CHAINS.STELLAR]: {
+      USDC: 'GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5',
+      DAI: 'native', // No DAI on Stellar, use XLM
+      USDT: 'native', // No USDT on Stellar, use XLM
+    },
   };
 
   return stablecoinAddresses[chainId][stablecoin];
@@ -358,10 +450,10 @@ export async function createTipSwap(
   tipToken: string,
   tipAmount: string,
   recipientAddress: string,
-  preferredStablecoin: 'USDC' | 'DAI' | 'USDT' = 'USDC'
+  recipientToken: 'USDC' | 'DAI' | 'USDT' = 'USDC'
 ) {
   try {
-    const stablecoinAddress = await getStablecoinAddress(chainId, preferredStablecoin);
+    const stablecoinAddress = await getStablecoinAddress(chainId, recipientToken);
 
     // Create Fusion+ order for gasless swap
     const fusionOrder = await createFusionOrder(
@@ -377,7 +469,7 @@ export async function createTipSwap(
       success: true,
       orderHash: fusionOrder.orderHash,
       order: fusionOrder.order,
-      message: `Tip swap created! Converting to ${preferredStablecoin}`,
+      message: `Tip swap created! Converting to ${recipientToken}`,
     };
   } catch (error) {
     console.error('Error creating tip swap:', error);
@@ -397,22 +489,34 @@ export async function monitorTipJar(
   try {
     // In a real implementation, this would use WebSocket or polling
     // For now, we'll check balances periodically
-    const balances = await getWalletBalances(chainId, walletAddress);
+
+    // Special handling for Stellar
+    if (chainId === SUPPORTED_CHAINS.STELLAR) {
+      console.log('Stellar monitoring not yet implemented');
+      return;
+    }
+
+    const balances = await getWalletBalances(Number(chainId), walletAddress);
 
     // Process each balance and notify of new tips
-    for (const [tokenAddress, balance] of Object.entries(balances)) {
-      if (parseFloat(balance) > 0) {
-        const tokenMetadata = await getTokenMetadata(chainId, tokenAddress);
+    for (const balance of balances) {
+      if (parseFloat(balance.balance) > 0) {
         const value = await calculateTipValue(
           chainId,
-          tokenAddress,
-          balance,
-          tokenMetadata.decimals
+          balance.tokenAddress,
+          balance.balance,
+          balance.decimals
         );
 
         onTipReceived({
-          token: tokenMetadata,
-          amount: balance,
+          token: {
+            address: balance.tokenAddress,
+            symbol: balance.symbol,
+            name: balance.name,
+            decimals: balance.decimals,
+            logoURI: balance.logoURI || '',
+          },
+          amount: balance.balance,
           value: value.usdValue,
         });
       }

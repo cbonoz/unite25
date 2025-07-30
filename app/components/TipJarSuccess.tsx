@@ -3,14 +3,15 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { siteConfig } from '@/app/siteConfig';
+import { type ChainId } from '../utils/oneinch';
 
 interface TipJarSuccessProps {
   tipJarId: string;
   tipJarData: {
     name: string;
     walletAddress: string;
-    preferredStablecoin: 'USDC' | 'DAI' | 'USDT';
-    chains: number[];
+    recipientToken: 'USDC' | 'DAI' | 'USDT' | 'XLM' | 'STELLAR_USDC';
+    chains: ChainId[];
     customMessage: string;
   };
   onCreateAnother: () => void;
@@ -77,7 +78,7 @@ export default function TipJarSuccess({ tipJarId, tipJarData, onCreateAnother }:
                 {tipJarData.name}
               </h2>
               <p className="text-gray-600 dark:text-gray-300">
-                Receives tips as {tipJarData.preferredStablecoin}
+                Receives tips as {tipJarData.recipientToken}
               </p>
               <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                 Supports {tipJarData.chains.length} blockchain{tipJarData.chains.length !== 1 ? 's' : ''}
@@ -104,7 +105,7 @@ export default function TipJarSuccess({ tipJarId, tipJarData, onCreateAnother }:
               </h3>
               <ul className="text-sm text-blue-700 dark:text-blue-300 space-y-1">
                 <li>• Accept tips from {tipJarData.chains.length}+ blockchain{tipJarData.chains.length !== 1 ? 's' : ''}</li>
-                <li>• Auto-swap to {tipJarData.preferredStablecoin}</li>
+                <li>• Auto-swap to {tipJarData.recipientToken}</li>
                 <li>• Zero gas fees for you</li>
                 <li>• Real-time notifications</li>
                 <li>• Powered by 1inch Fusion+</li>
@@ -159,7 +160,7 @@ export default function TipJarSuccess({ tipJarId, tipJarData, onCreateAnother }:
               </p>
               <div className="grid grid-cols-3 gap-2">
                 <a
-                  href={`https://twitter.com/intent/tweet?text=Check out my new SwapJar! Send me tips in any token and I'll receive ${tipJarData.preferredStablecoin} ⚡&url=${encodeURIComponent(tipJarUrl)}&hashtags=SwapJar,crypto,tips`}
+                  href={`https://twitter.com/intent/tweet?text=Check out my new SwapJar! Send me tips in any token and I'll receive ${tipJarData.recipientToken} ⚡&url=${encodeURIComponent(tipJarUrl)}&hashtags=SwapJar,crypto,tips`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="px-3 py-2 bg-blue-500 text-white rounded text-xs text-center hover:bg-blue-600 transition-colors"
@@ -212,11 +213,11 @@ export default function TipJarSuccess({ tipJarId, tipJarData, onCreateAnother }:
             </li>
             <li className="flex items-start">
               <span className="bg-blue-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs mr-3 mt-0.5">2</span>
-              1inch Fusion+ automatically swaps to {tipJarData.preferredStablecoin}
+              1inch Fusion+ automatically swaps to {tipJarData.recipientToken}
             </li>
             <li className="flex items-start">
               <span className="bg-blue-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs mr-3 mt-0.5">3</span>
-              You receive {tipJarData.preferredStablecoin} in your wallet
+              You receive {tipJarData.recipientToken} in your wallet
             </li>
             <li className="flex items-start">
               <span className="bg-blue-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs mr-3 mt-0.5">4</span>

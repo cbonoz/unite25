@@ -6,13 +6,13 @@ import { useRouter } from 'next/navigation';
 import AppLayout from '../components/AppLayout';
 import TipJarSuccess from '../components/TipJarSuccess';
 import { SUPPORTED_CHAINS, type ChainId } from '../utils/oneinch';
-import { createTipJar, getTipJarUrl } from '@/app/utils/storage';
+import { createTipJar } from '@/app/utils/storage';
 import { siteConfig } from '@/app/siteConfig';
 
 interface FormData {
   displayName: string;
   walletAddress: string;
-  preferredStablecoin: 'USDC' | 'DAI' | 'USDT';
+  recipientToken: 'USDC' | 'DAI' | 'USDT' | 'XLM' | 'STELLAR_USDC';
   customUrl: string;
   selectedChains: ChainId[];
   customMessage: string;
@@ -23,7 +23,7 @@ interface CreatedTipJar {
   data: {
     name: string;
     walletAddress: string;
-    preferredStablecoin: 'USDC' | 'DAI' | 'USDT';
+    recipientToken: 'USDC' | 'DAI' | 'USDT' | 'XLM' | 'STELLAR_USDC';
     chains: ChainId[];
     customMessage: string;
   };
@@ -34,7 +34,7 @@ const CreatePage = () => {
   const [formData, setFormData] = useState<FormData>({
     displayName: '',
     walletAddress: '',
-    preferredStablecoin: 'USDC',
+    recipientToken: 'USDC',
     customUrl: '',
     selectedChains: [SUPPORTED_CHAINS.ETHEREUM],
     customMessage: '',
@@ -49,6 +49,7 @@ const CreatePage = () => {
     { id: SUPPORTED_CHAINS.OPTIMISM, name: 'Optimism', color: 'bg-red-500' },
     { id: SUPPORTED_CHAINS.POLYGON, name: 'Polygon', color: 'bg-purple-500' },
     { id: SUPPORTED_CHAINS.ARBITRUM, name: 'Arbitrum', color: 'bg-blue-400' },
+    { id: 'stellar' as ChainId, name: 'Stellar', color: 'bg-indigo-500' },
   ];
 
   const validateForm = () => {
@@ -60,8 +61,26 @@ const CreatePage = () => {
 
     if (!formData.walletAddress.trim()) {
       newErrors.walletAddress = 'Wallet address is required';
-    } else if (!/^0x[a-fA-F0-9]{40}$/.test(formData.walletAddress)) {
-      newErrors.walletAddress = 'Invalid Ethereum address format';
+    } else {
+      // Validate address format based on selected chains
+      const hasEthereumChains = formData.selectedChains.some(chain =>
+        chain !== 'stellar'
+      );
+      const hasStellar = formData.selectedChains.includes('stellar' as ChainId);
+
+      if (hasEthereumChains && !/^0x[a-fA-F0-9]{40}$/.test(formData.walletAddress)) {
+        newErrors.walletAddress = 'Invalid Ethereum address format (must start with 0x and be 42 characters)';
+      } else if (hasStellar && hasEthereumChains && !/^0x[a-fA-F0-9]{40}$/.test(formData.walletAddress)) {
+        newErrors.walletAddress = 'For mixed chains, please use an Ethereum address format';
+      } else if (hasStellar && !hasEthereumChains && !/^G[0-9A-Z]{55}$/.test(formData.walletAddress)) {
+        newErrors.walletAddress = 'Invalid Stellar address format (must start with G and be 56 characters)';
+      }
+    }
+
+    // Validate Stellar address if cross-chain is enabled
+    if (formData.selectedChains.includes('stellar' as ChainId)) {
+      // For Stellar native support, we might need additional validation
+      // This could be implemented later based on requirements
     }
 
     if (formData.customUrl && !/^[a-zA-Z0-9-_]+$/.test(formData.customUrl)) {
@@ -76,7 +95,7 @@ const CreatePage = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleInputChange = (field: keyof FormData, value: string | ChainId[]) => {
+  const handleInputChange = (field: keyof FormData, value: string | ChainId[] | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     // Clear error when user starts typing
     if (errors[field]) {
@@ -106,9 +125,9 @@ const CreatePage = () => {
         name: formData.displayName,
         description: `${formData.displayName}'s tip jar`,
         walletAddress: formData.walletAddress,
-        preferredStablecoin: formData.preferredStablecoin,
+        recipientToken: formData.recipientToken,
         chains: formData.selectedChains,
-        customMessage: formData.customMessage || `Send tips in any token, I'll receive ${formData.preferredStablecoin}`,
+        customMessage: formData.customMessage || `Send tips in any token, I'll receive ${formData.recipientToken}`,
         customization: {
           primaryColor: '#3B82F6', // Default blue
           backgroundColor: '#F8FAFC', // Default light background
@@ -123,7 +142,7 @@ const CreatePage = () => {
         data: {
           name: formData.displayName,
           walletAddress: formData.walletAddress,
-          preferredStablecoin: formData.preferredStablecoin,
+          recipientToken: formData.recipientToken,
           chains: formData.selectedChains,
           customMessage: formData.customMessage,
         }
@@ -141,7 +160,7 @@ const CreatePage = () => {
     setFormData({
       displayName: '',
       walletAddress: '',
-      preferredStablecoin: 'USDC',
+      recipientToken: 'USDC',
       customUrl: '',
       selectedChains: [SUPPORTED_CHAINS.ETHEREUM],
       customMessage: '',
@@ -204,13 +223,16 @@ const CreatePage = () => {
                       type="text"
                       value={formData.walletAddress}
                       onChange={(e) => handleInputChange('walletAddress', e.target.value)}
-                      placeholder="0x..."
+                      placeholder={formData.selectedChains.includes('stellar' as ChainId) && formData.selectedChains.length === 1 ? 'G...' : '0x...'}
                       className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white ${
                         errors.walletAddress ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
                       }`}
                     />
                     <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                      This is where you&apos;ll receive your stablecoins
+                      {formData.selectedChains.includes('stellar' as ChainId) && formData.selectedChains.length === 1
+                        ? 'Enter your Stellar address (starts with G)'
+                        : 'Enter your Ethereum address (starts with 0x)'
+                      }
                     </p>
                     {errors.walletAddress && (
                       <p className="text-red-500 text-sm mt-1">{errors.walletAddress}</p>
@@ -219,17 +241,22 @@ const CreatePage = () => {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Preferred Stablecoin
+                      Receive Donations In
                     </label>
                     <select
-                      value={formData.preferredStablecoin}
-                      onChange={(e) => handleInputChange('preferredStablecoin', e.target.value)}
+                      value={formData.recipientToken}
+                      onChange={(e) => handleInputChange('recipientToken', e.target.value)}
                       className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
                     >
                       <option value="USDC">USDC - USD Coin</option>
                       <option value="DAI">DAI - MakerDAO</option>
                       <option value="USDT">USDT - Tether</option>
+                      <option value="XLM">XLM - Stellar Lumens</option>
+                      <option value="STELLAR_USDC">USDC on Stellar</option>
                     </select>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                      All tips will be automatically converted to this currency
+                    </p>
                   </div>
 
                   <div>
@@ -239,7 +266,7 @@ const CreatePage = () => {
                     <textarea
                       value={formData.customMessage}
                       onChange={(e) => handleInputChange('customMessage', e.target.value)}
-                      placeholder={`Send tips in any token, I'll receive ${formData.preferredStablecoin}`}
+                      placeholder={`Send tips in any token, I'll receive ${formData.recipientToken}`}
                       rows={3}
                       className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white resize-none"
                     />
@@ -305,7 +332,7 @@ const CreatePage = () => {
                       {formData.displayName || 'Your Tips'}
                     </h3>
                     <p className="text-gray-600 dark:text-gray-300 mb-4">
-                      {formData.customMessage || `Send tips in any token, I'll receive ${formData.preferredStablecoin}`}
+                      {formData.customMessage || `Send tips in any token, I'll receive ${formData.recipientToken}`}
                     </p>
                     <div className="space-y-2">
                       <button className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg text-sm">
@@ -324,7 +351,7 @@ const CreatePage = () => {
                   </h4>
                   <ul className="text-sm text-blue-700 dark:text-blue-300 space-y-1">
                     <li>• Accept tips from {formData.selectedChains.length}+ blockchain{formData.selectedChains.length !== 1 ? 's' : ''}</li>
-                    <li>• Auto-swap to {formData.preferredStablecoin}</li>
+                    <li>• Auto-convert to {formData.recipientToken}</li>
                     <li>• Zero gas fees for you</li>
                     <li>• Real-time notifications</li>
                     <li>• Powered by 1inch Fusion+</li>

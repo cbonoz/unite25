@@ -10,7 +10,7 @@ import { siteConfig } from '@/app/siteConfig';
 interface TipJarData {
   name: string;
   walletAddress: string;
-  preferredStablecoin: 'USDC' | 'DAI' | 'USDT';
+  recipientToken: 'USDC' | 'DAI' | 'USDT';
 }
 
 export default function QRPage() {
@@ -44,7 +44,7 @@ export default function QRPage() {
         setTipJarData({
           name: config.name,
           walletAddress: config.walletAddress,
-          preferredStablecoin: config.preferredStablecoin,
+          recipientToken: config.recipientToken,
         });
       } catch (error) {
         console.error('❌ Error loading tip jar for QR:', error);
@@ -155,7 +155,7 @@ export default function QRPage() {
               {tipJarData.name}
             </h2>
             <p className="text-gray-600 dark:text-gray-300">
-              Receives tips as {tipJarData.preferredStablecoin}
+              Receives tips as {tipJarData.recipientToken}
             </p>
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
               Powered by 1inch Fusion+ • Zero gas fees
@@ -205,7 +205,7 @@ export default function QRPage() {
               <li>• Scan with any QR code reader or camera app</li>
               <li>• Opens the tip jar page in your browser</li>
               <li>• Connect wallet and send tips in any token</li>
-              <li>• Recipient automatically receives {tipJarData.preferredStablecoin}</li>
+              <li>• Recipient automatically receives {tipJarData.recipientToken}</li>
             </ul>
           </div>
         </div>

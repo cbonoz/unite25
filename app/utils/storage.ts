@@ -16,6 +16,7 @@ import { StoreMemory } from '@storacha/client/stores/memory';
 import * as Proof from '@storacha/client/proof';
 import { Signer } from '@storacha/client/principal/ed25519';
 import { siteConfig } from '@/app/siteConfig';
+import { type ChainId } from './oneinch';
 
 // Environment variables for Storacha
 const STORACHA_PROOF = process.env.NEXT_PUBLIC_STORACHA_PROOF;
@@ -27,8 +28,8 @@ export interface TipJarConfig {
   name: string;
   description?: string;
   walletAddress: string;
-  preferredStablecoin: 'USDC' | 'DAI' | 'USDT';
-  chains: number[];
+  recipientToken: 'USDC' | 'DAI' | 'USDT' | 'XLM' | 'STELLAR_USDC';
+  chains: ChainId[];
   createdAt: string;
   isActive: boolean;
   customMessage?: string;
@@ -163,7 +164,7 @@ export async function retrieveTipJarConfig(cid: string): Promise<TipJarConfig | 
       name: config.name,
       walletAddress: config.walletAddress,
       chains: config.chains,
-      preferredStablecoin: config.preferredStablecoin
+      recipientToken: config.recipientToken
     });
 
     return config;
@@ -188,8 +189,8 @@ export async function createTipJar(data: {
   name: string;
   description?: string;
   walletAddress: string;
-  preferredStablecoin: 'USDC' | 'DAI' | 'USDT';
-  chains: number[];
+  recipientToken: 'USDC' | 'DAI' | 'USDT' | 'XLM' | 'STELLAR_USDC';
+  chains: ChainId[];
   customMessage?: string;
   customization?: TipJarConfig['customization'];
 }): Promise<{ config: TipJarConfig; cid: string }> {
@@ -202,7 +203,7 @@ export async function createTipJar(data: {
       name: data.name,
       description: data.description,
       walletAddress: data.walletAddress,
-      preferredStablecoin: data.preferredStablecoin,
+      recipientToken: data.recipientToken,
       chains: data.chains,
       createdAt: now,
       isActive: true,

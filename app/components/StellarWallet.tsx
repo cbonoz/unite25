@@ -11,14 +11,14 @@ interface StellarWalletProps {
     asset: string;
   }) => void;
   recipientAddress: string;
-  preferredStablecoin: string;
+  recipientToken: string;
   tipJarId: string;
 }
 
 export default function StellarWallet({
   onTipSent,
   recipientAddress,
-  preferredStablecoin,
+  recipientToken,
   tipJarId,
 }: StellarWalletProps) {
   const [isConnected, setIsConnected] = useState(false);
@@ -66,7 +66,7 @@ export default function StellarWallet({
           ethereumRecipient: recipientAddress,
           amount: tipAmount,
           assetCode: selectedAsset,
-          targetEthereumToken: preferredStablecoin === 'USDC'
+          targetEthereumToken: recipientToken === 'USDC'
             ? '0xA0b86a33E6441C8C7b60b8B5fa46a80C42a59C5d'
             : undefined,
           tipJarId,
@@ -114,7 +114,7 @@ export default function StellarWallet({
       </div>
 
       <p className="text-gray-600 dark:text-gray-300 mb-6 text-sm">
-        Send tips from Stellar network (XLM or USDC) and recipient automatically receives {preferredStablecoin} on Ethereum via 1inch Fusion+
+        Send tips from Stellar network (XLM or USDC) and recipient automatically receives {recipientToken} on Ethereum via 1inch Fusion+
       </p>
 
       {!isConnected ? (
@@ -206,7 +206,7 @@ export default function StellarWallet({
             <ol className="text-xs text-blue-700 dark:text-blue-300 space-y-1">
               <li>1. Your {selectedAsset} is locked on Stellar with hashlock</li>
               <li>2. Bridge creates 1inch Fusion+ order on Ethereum</li>
-              <li>3. Recipient receives {preferredStablecoin} gaslessly</li>
+              <li>3. Recipient receives {recipientToken} gaslessly</li>
               <li>4. Atomic swap completes when secret is revealed</li>
             </ol>
           </div>

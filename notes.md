@@ -28,6 +28,31 @@ Current tipping solutions in crypto face several critical limitations:
 - **Limited cross-chain support**: No seamless way for users on non-EVM chains (like Stellar) to tip EVM users
 - **Manual conversion overhead**: Recipients must manually swap each tip, creating friction and ongoing maintenance
 
+### Challenges going after
+
+Build a full Application using 1inch APIs
+
+1inch offers a variety of REST APIs that make building onchain applications simpler. Create a full dApp using as many 1inch APIs as possible.
+Example integration points:
+- Add swap functionality with one of our swap protocols (1inch Cross-chain Swap (Fusion+), Intent-based Swap (Fusion), Classic Swap, or Limit Order protocol)
+- Source onchain data using our data APIs (price feeds API, wallet balances API, token metadata API, and many more)
+- Post transactions our Web3 API to interact with the blockchain
+Qualification Requirements
+- Application should use 1inch API as much as possible
+- Consistent commit history should be in the GitHub project. No low or single-commit entries allowed!
+
+Extend Fusion+ to Stellar
+
+Build a novel extension for 1inch Cross-chain Swap (Fusion+) that enables swaps between Ethereum and Stellar.
+Qualification Requirements
+Requirements:
+- Preserve hashlock and timelock functionality for the non-EVM implementation
+- Swap functionality should be bidirectional (swaps should be possible to and from Ethereum)
+- Onchain (mainnet/L2 or testnet) execution of token transfers should be presented during the final demo (EVM testnets will require the deployment of Limit Order Protocol contracts)
+Stretch goals (not hard requirements):
+- UI
+- Enable partial fills
+
 ### Solution
 
 SwapJar solves these problems by creating a **universal, gasless tipping experience** powered by 1inch Fusion+:
