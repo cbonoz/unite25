@@ -23,6 +23,7 @@ import {
   type ChainId,
   type Balance
 } from '../../utils/oneinch';
+import { createOptimizedSwap, initiateStellarBridge } from '../../utils/fusion';
 
 interface TipJarData {
   name: string;
@@ -267,140 +268,77 @@ export default function TipPage() {
                                 tipJarData.recipientToken === 'STELLAR_USDC' ||
                                 (tipJarData.walletAddress.startsWith('G') && tipJarData.walletAddress.length === 56);
 
-      // For cross-chain scenarios, we'll swap to USDC as intermediate token
-      // since USDC is widely available and can be easily converted
+      // For same-chain swaps, find the target token
       const stablecoins = await getPopularTokens(selectedChain);
       let targetToken = stablecoins.find(token =>
         token.symbol.toUpperCase() === tipJarData.recipientToken.toUpperCase()
       );
 
-      // If recipient token not available on this chain, use USDC as intermediate
-      if (!targetToken) {
+      // If recipient token not available on this chain OR it's a Stellar recipient, use USDC as intermediate
+      if (!targetToken || isStellarRecipient) {
         targetToken = stablecoins.find(token => token.symbol.toUpperCase() === 'USDC');
-        console.log(`ℹ️ ${tipJarData.recipientToken} not available on ${selectedChain}, using USDC as intermediate token`);
+        if (isStellarRecipient) {
+          console.log(`🌉 Stellar recipient detected, using USDC as bridge token`);
+        } else {
+          console.log(`ℹ️ ${tipJarData.recipientToken} not available on ${selectedChain}, using USDC as intermediate token`);
+        }
       }
 
       if (!targetToken) {
-        throw new Error(`Unable to find suitable intermediate token on this chain`);
+        throw new Error(`Unable to find USDC on this chain. Please try a different network.`);
       }
 
-      // If recipient wants Stellar tokens, use bridge instead of direct transfer
-      if (isStellarRecipient) {
-        console.log('🌉 Detected Stellar recipient, using bridge flow...');
-
-        // Use bridge API to handle the cross-chain transfer
-        const bridgeResponse = await fetch('/api/stellar/bridge', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            sourceChain: selectedChain,
-            sourceToken: selectedToken.address,
-            sourceAmount: amountInWei,
-            senderAddress: address,
-            targetStellarAddress: tipJarData.walletAddress,
-            targetAsset: tipJarData.recipientToken === 'XLM' ? 'XLM' : 'USDC'
-          })
-        });
-
-        if (!bridgeResponse.ok) {
-          const errorData = await bridgeResponse.text();
-          throw new Error(`Bridge API error: ${bridgeResponse.status} ${errorData}`);
-        }
-
-        const bridgeResult = await bridgeResponse.json();
-        console.log('✅ Bridge order created:', bridgeResult);
-
-        // Use the bridge result as our swap order
-        const swapOrder = bridgeResult;
-
-        console.log('✅ Cross-chain bridge transaction prepared:', swapOrder);
-
-        if (!swapOrder.transaction || !signer) {
-          throw new Error('Unable to prepare bridge transaction or get signer');
-        }
-
-        // Execute the bridge transaction
-        console.log('📝 Sending bridge transaction...', {
-          to: swapOrder.transaction.to,
-          value: swapOrder.transaction.value,
-          data: swapOrder.transaction.data,
-        });
-
-        const txResponse = await signer.sendTransaction({
-          to: swapOrder.transaction.to,
-          value: swapOrder.transaction.value || '0',
-          data: swapOrder.transaction.data,
-          gasLimit: swapOrder.transaction.gas || '500000',
-        });
-
-        console.log('⏳ Bridge transaction sent, waiting for confirmation...', txResponse.hash);
-        setOrderHash(txResponse.hash);
-
-        // Wait for transaction confirmation
-        const receipt = await txResponse.wait();
-
-        if (!receipt) {
-          throw new Error('Transaction receipt not available');
-        }
-
-        console.log('✅ Bridge transaction confirmed!', {
-          hash: receipt.hash,
-          blockNumber: receipt.blockNumber,
-          status: receipt.status,
-        });
-
-        if (receipt.status === 1) {
-          // Add to cross-chain tips for display
-          setCrossChainTips(prev => [...prev, {
-            txHash: receipt.hash,
-            stellarAddress: tipJarData.walletAddress,
-            amount: tipAmount,
-            token: selectedToken.symbol
-          }]);
-          setTxStatus('success');
-        } else {
-          throw new Error('Bridge transaction failed');
-        }
-
-        return; // Exit early for bridge flow
-      }
-
-      console.log('💱 Creating direct swap transaction...', {
+      console.log('💱 Creating optimized swap transaction...', {
         fromToken: selectedToken.address,
         toToken: targetToken.address,
         amount: amountInWei,
         userAddress: address,
-        receiverAddress: tipJarData.walletAddress
+        receiverAddress: isStellarRecipient ? address : tipJarData.walletAddress, // For Stellar, we keep tokens first
+        isCrossChain: isStellarRecipient
       });
 
-      // Create swap transaction via 1inch API (for non-Stellar recipients)
-      const swapOrder = await createFusionOrder(
+      // Use optimized swap (Fusion+ or regular) with cross-chain support
+      const swapOrder = await createOptimizedSwap(
         selectedChain,
         selectedToken.address,
         targetToken.address,
         amountInWei,
-        address,
-        tipJarData.walletAddress
+        address!,
+        isStellarRecipient ? address! : tipJarData.walletAddress, // For cross-chain, keep USDC in sender's wallet first
+        isStellarRecipient
       );
 
       console.log('✅ Swap transaction prepared:', swapOrder);
 
-      if (!swapOrder.transaction || !signer) {
-        throw new Error('Unable to prepare transaction or get signer');
+      if (!swapOrder.success || !signer) {
+        const errorMsg = 'error' in swapOrder ? swapOrder.error : 'Unable to prepare transaction or get signer';
+        throw new Error(errorMsg || 'Swap preparation failed');
+      }
+
+      // Handle different response formats - extract transaction data
+      let transaction: Record<string, unknown> | null = null;
+      if ('transaction' in swapOrder) {
+        transaction = swapOrder.transaction as Record<string, unknown>;
+      } else if ('order' in swapOrder && swapOrder.order) {
+        transaction = (swapOrder.order as Record<string, unknown>).transaction as Record<string, unknown>;
+      }
+
+      if (!transaction) {
+        throw new Error('No transaction data received from swap API');
       }
 
       // Execute the transaction using the wallet signer
       console.log('📝 Sending transaction...', {
-        to: swapOrder.transaction.to,
-        value: swapOrder.transaction.value,
-        data: swapOrder.transaction.data,
+        to: transaction.to,
+        value: transaction.value,
+        data: transaction.data,
       });
 
       const txResponse = await signer.sendTransaction({
-        to: swapOrder.transaction.to,
-        value: swapOrder.transaction.value || '0',
-        data: swapOrder.transaction.data,
-        gasLimit: swapOrder.transaction.gas || '500000',
+        to: transaction.to as string,
+        value: (transaction.value as string) || '0',
+        data: transaction.data as string,
+        gasLimit: (transaction.gas as string) || '500000',
       });
 
       console.log('⏳ Transaction sent, waiting for confirmation...', txResponse.hash);
@@ -420,7 +358,39 @@ export default function TipPage() {
       });
 
       if (receipt.status === 1) {
-        setTxStatus('success');
+        // If this was a cross-chain transaction to Stellar, initiate the bridge
+        if (isStellarRecipient) {
+          try {
+            console.log('🌉 Initiating Stellar bridge after successful swap...');
+            
+            const bridgeResult = await initiateStellarBridge(
+              receipt.hash,
+              selectedChain as number,
+              tipAmount, // Use original tip amount for display
+              tipJarData.walletAddress,
+              tipJarData.recipientToken === 'XLM' ? 'XLM' : 'USDC'
+            );
+
+            console.log('✅ Stellar bridge initiated:', bridgeResult);
+            
+            // Add to cross-chain tips for display
+            setCrossChainTips(prev => [...prev, {
+              txHash: receipt.hash,
+              stellarAddress: tipJarData.walletAddress,
+              amount: tipAmount,
+              token: selectedToken.symbol
+            }]);
+
+            setTxStatus('success');
+          } catch (bridgeError) {
+            console.error('❌ Stellar bridge failed:', bridgeError);
+            // Still show success for the ETH->USDC swap, but show bridge warning
+            setTxStatus('success');
+            setErrorMessage(`Swap successful but Stellar bridge pending. Bridge error: ${bridgeError instanceof Error ? bridgeError.message : 'Unknown error'}`);
+          }
+        } else {
+          setTxStatus('success');
+        }
       } else {
         throw new Error('Transaction failed');
       }
