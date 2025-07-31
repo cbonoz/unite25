@@ -92,6 +92,8 @@ export interface OrderData {
 async function apiRequest(endpoint: string, options: RequestInit = {}) {
   const url = endpoint.startsWith('/api') ? endpoint : `/api${endpoint}`;
 
+  console.log(`🌐 Making API request to: ${url}`);
+
   const response = await fetch(url, {
     ...options,
     headers: {
@@ -100,11 +102,17 @@ async function apiRequest(endpoint: string, options: RequestInit = {}) {
     },
   });
 
+  console.log(`📡 API Response: ${response.status} ${response.statusText}`);
+
   if (!response.ok) {
-    throw new Error(`API error: ${response.status} ${response.statusText}`);
+    const errorText = await response.text();
+    console.error(`❌ API Error Response:`, errorText);
+    throw new Error(`API error: ${response.status} ${response.statusText} - ${errorText}`);
   }
 
-  return response.json();
+  const data = await response.json();
+  console.log(`✅ API Success Response:`, data);
+  return data;
 }
 
 // 1. Token Metadata API
@@ -125,54 +133,23 @@ export async function getTokenMetadata(chainId: ChainId, tokenAddress: string): 
 }
 
 export async function getPopularTokens(chainId: ChainId): Promise<Token[]> {
-  try {
-    const data = await apiRequest(`/tokens/${chainId}`);
-    return Object.entries(data.tokens || data).map(([address, token]) => ({
-      address,
-      symbol: (token as TokenData).symbol,
-      name: (token as TokenData).name,
-      decimals: (token as TokenData).decimals,
-      logoURI: (token as TokenData).logoURI,
-    }));
-  } catch (error) {
-    console.error('Error fetching popular tokens:', error);
-    // Return fallback tokens for development
-    return getFallbackTokens(chainId);
-  }
+  console.log(`🔍 Fetching tokens from 1inch API for chain ${chainId}...`);
+
+  const data = await apiRequest(`/tokens/${chainId}`);
+  console.log(`✅ Raw API response:`, data);
+
+  const tokens = Object.entries(data.tokens || data).map(([address, token]) => ({
+    address,
+    symbol: (token as TokenData).symbol,
+    name: (token as TokenData).name,
+    decimals: (token as TokenData).decimals,
+    logoURI: (token as TokenData).logoURI,
+  }));
+
+  console.log(`✅ Parsed ${tokens.length} tokens from API:`, tokens.slice(0, 5));
+  return tokens;
 }
 
-// Fallback tokens for development/testing
-function getFallbackTokens(chainId: ChainId): Token[] {
-  const fallbackTokens: Record<ChainId, Token[]> = {
-    [SUPPORTED_CHAINS.ETHEREUM]: [
-      { address: '0xA0b86a33E6441C8C7b60b8B5fa46a80C42a59C5d', symbol: 'USDC', name: 'USD Coin', decimals: 6 },
-      { address: '0x6B175474E89094C44Da98b954EedeAC495271d0F', symbol: 'DAI', name: 'Dai Stablecoin', decimals: 18 },
-      { address: '0xdAC17F958D2ee523a2206206994597C13D831ec7', symbol: 'USDT', name: 'Tether USD', decimals: 6 },
-    ],
-    [SUPPORTED_CHAINS.BASE]: [
-      { address: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913', symbol: 'USDC', name: 'USD Coin', decimals: 6 },
-      { address: '0x50c5725949A6F0c72E6C4a641F24049A917DB0Cb', symbol: 'DAI', name: 'Dai Stablecoin', decimals: 18 },
-    ],
-    [SUPPORTED_CHAINS.OPTIMISM]: [
-      { address: '0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85', symbol: 'USDC', name: 'USD Coin', decimals: 6 },
-      { address: '0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1', symbol: 'DAI', name: 'Dai Stablecoin', decimals: 18 },
-    ],
-    [SUPPORTED_CHAINS.POLYGON]: [
-      { address: '0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174', symbol: 'USDC', name: 'USD Coin', decimals: 6 },
-      { address: '0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063', symbol: 'DAI', name: 'Dai Stablecoin', decimals: 18 },
-    ],
-    [SUPPORTED_CHAINS.ARBITRUM]: [
-      { address: '0xaf88d065e77c8cC2239327C5EDb3A432268e5831', symbol: 'USDC', name: 'USD Coin', decimals: 6 },
-      { address: '0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1', symbol: 'DAI', name: 'Dai Stablecoin', decimals: 18 },
-    ],
-    [SUPPORTED_CHAINS.STELLAR]: [
-      { address: 'native', symbol: 'XLM', name: 'Stellar Lumens', decimals: 7 },
-      { address: 'GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5', symbol: 'USDC', name: 'USD Coin', decimals: 7 },
-    ],
-  };
-
-  return fallbackTokens[chainId] || fallbackTokens[SUPPORTED_CHAINS.ETHEREUM];
-}
 
 // 2. Price Feeds API
 export async function getTokenPrice(chainId: ChainId, tokenAddress: string): Promise<number> {

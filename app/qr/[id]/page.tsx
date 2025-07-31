@@ -10,7 +10,7 @@ import { siteConfig } from '@/app/siteConfig';
 interface TipJarData {
   name: string;
   walletAddress: string;
-  recipientToken: 'USDC' | 'DAI' | 'USDT';
+  recipientToken: string;
 }
 
 export default function QRPage() {

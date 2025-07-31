@@ -61,20 +61,6 @@ const CreatePage = () => {
 
     if (!formData.walletAddress.trim()) {
       newErrors.walletAddress = 'Wallet address is required';
-    } else {
-      // Validate address format based on selected chains
-      const hasEthereumChains = formData.selectedChains.some(chain =>
-        chain !== 'stellar'
-      );
-      const hasStellar = formData.selectedChains.includes('stellar' as ChainId);
-
-      if (hasEthereumChains && !/^0x[a-fA-F0-9]{40}$/.test(formData.walletAddress)) {
-        newErrors.walletAddress = 'Invalid Ethereum address format (must start with 0x and be 42 characters)';
-      } else if (hasStellar && hasEthereumChains && !/^0x[a-fA-F0-9]{40}$/.test(formData.walletAddress)) {
-        newErrors.walletAddress = 'For mixed chains, please use an Ethereum address format';
-      } else if (hasStellar && !hasEthereumChains && !/^G[0-9A-Z]{55}$/.test(formData.walletAddress)) {
-        newErrors.walletAddress = 'Invalid Stellar address format (must start with G and be 56 characters)';
-      }
     }
 
     // Validate Stellar address if cross-chain is enabled
