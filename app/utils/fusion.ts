@@ -196,7 +196,7 @@ export async function createOptimizedSwap(
   // For cross-chain to Stellar, always convert to USDC first
   if (isCrossChain) {
     console.log('🌉 Cross-chain swap detected, converting to USDC as intermediate token');
-    
+
     // Find USDC address on the source chain
     const usdcAddresses: Record<number, string> = {
       1: '0xA0b86a33E6441C8C7b60b8B5fa46a80C42a59C5d', // Ethereum USDC

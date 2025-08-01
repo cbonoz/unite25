@@ -362,7 +362,7 @@ export default function TipPage() {
         if (isStellarRecipient) {
           try {
             console.log('🌉 Initiating Stellar bridge after successful swap...');
-            
+
             const bridgeResult = await initiateStellarBridge(
               receipt.hash,
               selectedChain as number,
@@ -372,7 +372,7 @@ export default function TipPage() {
             );
 
             console.log('✅ Stellar bridge initiated:', bridgeResult);
-            
+
             // Add to cross-chain tips for display
             setCrossChainTips(prev => [...prev, {
               txHash: receipt.hash,
