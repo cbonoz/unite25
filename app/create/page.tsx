@@ -162,7 +162,7 @@ const CreatePage = () => {
               Create Your SwapJar
             </h1>
             <p className="text-xl text-gray-600 dark:text-gray-300">
-              Set up your universal tip jar in just a few steps
+              Set up your universal tip jar link in just a few steps
             </p>
           </div>
 
@@ -182,12 +182,12 @@ const CreatePage = () => {
                         displayName: "Sarah & Mike's Wedding Fund 💒",
                         walletAddress: "0x742d35Cc6634C0532925a3b8D4020A2E2B1e8d4B",
                         recipientToken: 'USDC',
-                        selectedChains: [SUPPORTED_CHAINS.ETHEREUM, SUPPORTED_CHAINS.BASE, 'stellar' as ChainId],
+                        selectedChains: [SUPPORTED_CHAINS.ETHEREUM, 'stellar' as ChainId],
                         customMessage: "Help us celebrate our special day! Your tips will go toward our honeymoon in Italy. We accept any token from any chain - it all converts to USDC automatically! 🇮🇹✨",
                       });
                       setErrors({});
                     }}
-                    className="px-4 py-2 text-sm bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600 transition-all duration-200 flex items-center gap-2 shadow-md"
+                    className="cursor-pointer px-4 py-2 text-sm bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600 transition-all duration-200 flex items-center gap-2 shadow-md"
                   >
                     <span>✨</span>
                     Use Wedding Demo
@@ -265,7 +265,7 @@ const CreatePage = () => {
                       value={formData.customMessage}
                       onChange={(e) => handleInputChange('customMessage', e.target.value)}
                       placeholder={`Send tips in any token, I'll receive ${formData.recipientToken}`}
-                      rows={3}
+                      rows={5}
                       className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white resize-none"
                     />
                     <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">

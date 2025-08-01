@@ -30,7 +30,7 @@ export default function Home() {
       {/* Hero Section */}
       <main className="container mx-auto px-6 py-12">
         <div className="text-center max-w-5xl mx-auto">
-          <h1 className="text-5xl md:text-6xl font-bold text-gray-800 dark:text-white mb-6 mt-12">
+          <h1 className="text-5xl md:text-6xl font-bold text-gray-800 dark:text-white mb-6 mt-12 font-serif">
             Receive payments and donations in <span className="text-blue-600">any token</span> from{" "}
             <span className="text-purple-600">any chain</span>*
           </h1>
