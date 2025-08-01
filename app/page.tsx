@@ -12,14 +12,26 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
-      <Header />
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 relative">
+      {/* Background Image Overlay */}
+      <div
+        className="absolute inset-0 opacity-25 bg-cover bg-center bg-no-repeat"
+        style={{
+          backgroundImage: "url('/coin_background.png')",
+        }}
+      />
+      {/* Optional: Additional overlay for better text readability */}
+      <div className="absolute inset-0 bg-white/20 dark:bg-black/30" />
+
+      {/* Content wrapper with relative positioning */}
+      <div className="relative z-10">
+        <Header />
 
       {/* Hero Section */}
       <main className="container mx-auto px-6 py-12">
-        <div className="text-center max-w-4xl mx-auto">
+        <div className="text-center max-w-5xl mx-auto">
           <h1 className="text-5xl md:text-6xl font-bold text-gray-800 dark:text-white mb-6 mt-12">
-            Receive gifts and donations in <span className="text-blue-600">any token</span> from{" "}
+            Receive payments and donations in <span className="text-blue-600">any token</span> from{" "}
             <span className="text-purple-600">any chain</span>*
           </h1>
           <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 leading-relaxed">
@@ -95,10 +107,10 @@ export default function Home() {
         <section className="py-16 text-center">
           <div className="max-w-2xl mx-auto">
             <h2 className="text-3xl font-bold text-gray-800 dark:text-white mb-6">
-              Ready to Start Receiving Tips?
+              Ready to Start Receiving Payments?
             </h2>
             <p className="text-xl text-gray-600 dark:text-gray-300 mb-8">
-              Create your universal tip jar in seconds. No setup fees, no monthly costs.
+              Create your universal tip jar link in seconds. No setup fees, no monthly costs.
             </p>
             <button
               onClick={goToCreate}
@@ -141,6 +153,7 @@ export default function Home() {
           </div>
         </div>
       </footer>
+      </div> {/* Close content wrapper */}
     </div>
   );
 }
