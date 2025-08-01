@@ -18,12 +18,12 @@ export default function Home() {
       {/* Hero Section */}
       <main className="container mx-auto px-6 py-12">
         <div className="text-center max-w-4xl mx-auto">
-          <h1 className="text-5xl md:text-6xl font-bold text-gray-800 dark:text-white mb-6">
-            Receive tips in <span className="text-blue-600">any token</span> from{" "}
-            <span className="text-purple-600">any chain</span>
+          <h1 className="text-5xl md:text-6xl font-bold text-gray-800 dark:text-white mb-6 mt-12">
+            Receive gifts and donations in <span className="text-blue-600">any token</span> from{" "}
+            <span className="text-purple-600">any chain</span>*
           </h1>
           <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 leading-relaxed">
-            Automatically swapped to your favorite stablecoin via{" "}
+            Automatically swapped to your favorite coin or stablecoin via{" "}
             <span className="font-semibold">1inch Fusion+</span>
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">

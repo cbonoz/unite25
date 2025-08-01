@@ -13,7 +13,6 @@ interface FormData {
   displayName: string;
   walletAddress: string;
   recipientToken: 'USDC' | 'DAI' | 'USDT' | 'XLM' | 'STELLAR_USDC';
-  customUrl: string;
   selectedChains: ChainId[];
   customMessage: string;
 }
@@ -35,7 +34,6 @@ const CreatePage = () => {
     displayName: '',
     walletAddress: '',
     recipientToken: 'USDC',
-    customUrl: '',
     selectedChains: [SUPPORTED_CHAINS.ETHEREUM],
     customMessage: '',
   });
@@ -67,10 +65,6 @@ const CreatePage = () => {
     if (formData.selectedChains.includes('stellar' as ChainId)) {
       // For Stellar native support, we might need additional validation
       // This could be implemented later based on requirements
-    }
-
-    if (formData.customUrl && !/^[a-zA-Z0-9-_]+$/.test(formData.customUrl)) {
-      newErrors.customUrl = 'URL can only contain letters, numbers, hyphens, and underscores';
     }
 
     if (formData.selectedChains.length === 0) {
@@ -147,7 +141,6 @@ const CreatePage = () => {
       displayName: '',
       walletAddress: '',
       recipientToken: 'USDC',
-      customUrl: '',
       selectedChains: [SUPPORTED_CHAINS.ETHEREUM],
       customMessage: '',
     });
@@ -178,9 +171,28 @@ const CreatePage = () => {
             <div className="grid md:grid-cols-2 gap-8">
               {/* Configuration Form */}
               <div>
-                <h2 className="text-2xl font-semibold text-gray-800 dark:text-white mb-6">
-                  Configuration
-                </h2>
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-2xl font-semibold text-gray-800 dark:text-white">
+                    Configuration
+                  </h2>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFormData({
+                        displayName: "Sarah & Mike's Wedding Fund 💒",
+                        walletAddress: "0x742d35Cc6634C0532925a3b8D4020A2E2B1e8d4B",
+                        recipientToken: 'USDC',
+                        selectedChains: [SUPPORTED_CHAINS.ETHEREUM, SUPPORTED_CHAINS.BASE, 'stellar' as ChainId],
+                        customMessage: "Help us celebrate our special day! Your tips will go toward our honeymoon in Italy. We accept any token from any chain - it all converts to USDC automatically! 🇮🇹✨",
+                      });
+                      setErrors({});
+                    }}
+                    className="px-4 py-2 text-sm bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600 transition-all duration-200 flex items-center gap-2 shadow-md"
+                  >
+                    <span>✨</span>
+                    Use Wedding Demo
+                  </button>
+                </div>
 
                 <div className="space-y-6">
                   <div>
@@ -343,14 +355,6 @@ const CreatePage = () => {
                     <li>• Powered by 1inch Fusion+</li>
                   </ul>
                 </div>
-
-                {formData.customUrl && (
-                  <div className="mt-4 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                    <p className="text-sm text-green-700 dark:text-green-300">
-                      <strong>Your URL:</strong> {siteConfig.appUrl.replace(/^https?:\/\//, '')}/{formData.customUrl}
-                    </p>
-                  </div>
-                )}
               </div>
             </div>
           </div>
