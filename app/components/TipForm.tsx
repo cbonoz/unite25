@@ -129,7 +129,7 @@ export default function TipForm({
           <div className="mt-2 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
             <p className="text-sm text-blue-800 dark:text-blue-200">
               {selectedToken.symbol === 'USDC' && isStellarRecipient ? (
-                <>🌉 <strong>Direct Bridge:</strong> Your USDC will be bridged directly to Stellar and converted to {recipientToken}</>
+                <>⚡ <strong>Direct Bridge:</strong> Your USDC will be bridged directly to Stellar and converted to {recipientToken} (no swap needed!)</>
               ) : isStellarRecipient ? (
                 <>🌉 <strong>Cross-Chain Bridge:</strong> Your {selectedToken.symbol} will be swapped to USDC and bridged to Stellar as {recipientToken}</>
               ) : isEVMCrossChain ? (

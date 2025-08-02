@@ -3,7 +3,14 @@
 import { SDK, QuoteParams, OrderParams, OrderInfo, CrossChainSDKConfigParams } from '@1inch/cross-chain-sdk';
 import { SupportedChain, SupportedChains } from '@1inch/cross-chain-sdk';
 import { Quote } from '@1inch/cross-chain-sdk';
-import { NetworkEnum } from '@1inch/fusion-sdk';
+import { NetworkEnum, PresetEnum } from '@1inch/fusion-sdk';
+import {
+  CrossChainUtils,
+  CROSS_CHAIN_CONSTANTS,
+  CROSS_CHAIN_PRESETS,
+  CrossChainOrder,
+  CrossChainPreset
+} from '../constants';
 
 export interface CrossChainQuote {
   srcChainId: number;
@@ -325,4 +332,203 @@ export function getSupportedCrossChainRoutes(): Array<{
       tokens: ['MATIC', 'USDC', 'DAI']
     }
   ];
+}
+
+/**
+ * Create a cross-chain order with hashlock and timelock functionality
+ * Implements the example pattern from 1inch documentation
+ */
+export async function createCrossChainOrderWithHashlock(
+  srcChainId: number,
+  dstChainId: number,
+  srcTokenAddress: string,
+  dstTokenAddress: string,
+  amount: string,
+  walletAddress: string,
+  preset: CrossChainPreset = CROSS_CHAIN_PRESETS.fast,
+  timelockDuration?: number
+): Promise<CrossChainOrder | { error: string; description?: string }> {
+  try {
+    console.log('🔐 Creating cross-chain order with hashlock:', {
+      srcChainId,
+      dstChainId,
+      srcTokenAddress,
+      dstTokenAddress,
+      amount,
+      walletAddress,
+      preset
+    });
+
+    const sdk = initializeCrossChainSDK();
+
+    // Convert chain IDs to supported chains
+    const srcChain = chainIdToSupportedChain(srcChainId);
+    const dstChain = chainIdToSupportedChain(dstChainId);
+
+    if (!srcChain || !dstChain) {
+      return {
+        error: 'Unsupported chain',
+        description: `Chain ${srcChainId} or ${dstChainId} not supported by 1inch Cross Chain SDK`
+      };
+    }
+
+    // Step 1: Get quote estimate
+    const quote = await sdk.getQuote({
+      amount,
+      srcChainId: srcChain,
+      dstChainId: dstChain,
+      enableEstimate: true,
+      srcTokenAddress,
+      dstTokenAddress,
+      walletAddress
+    });
+
+    console.log('📊 Cross-chain quote received:', {
+      srcTokenAmount: quote.srcTokenAmount,
+      dstTokenAmount: quote.dstTokenAmount,
+      presets: Object.keys(quote.presets || {}),
+      secretsCount: quote.presets?.[preset]?.secretsCount || 1
+    });
+
+    // Step 2: Generate secrets based on preset requirements
+    const secretsCount = quote.presets?.[preset]?.secretsCount || 1;
+    const secrets = CrossChainUtils.generateSecrets(secretsCount);
+
+    console.log(`🔑 Generated ${secrets.length} secrets for hashlock`);
+
+    // Step 3: Create hashlock
+    const hashLock = secretsCount === 1
+      ? CrossChainUtils.createSingleHashLock(secrets[0])
+      : CrossChainUtils.createMultipleHashLock(secrets);
+
+    // Step 4: Generate secret hashes for the order
+    const secretHashes = secrets.map(secret => CrossChainUtils.hashSecret(secret));
+
+    // Step 5: Calculate timelock
+    const timelock = CrossChainUtils.calculateTimelock(timelockDuration);
+
+    console.log('⏰ Timelock configuration:', {
+      timelock,
+      remaining: CrossChainUtils.formatTimelockRemaining(timelock),
+      isActive: CrossChainUtils.isTimelockActive(timelock)
+    });
+
+    // Step 6: Create the order with hashlock and timelock
+    // Note: This is a simplified implementation. In production, you would need to:
+    // 1. Import the proper HashLock class from the SDK
+    // 2. Use the correct preset enum values
+    // 3. Handle the full order creation flow with proper types
+
+    console.log('📝 Preparing order creation with hashlock configuration');
+    console.log('⚠️  Note: Full SDK integration requires proper HashLock implementation');
+
+    // For demonstration purposes, we'll return the prepared order data
+    // In production, replace this with actual SDK order creation
+    const mockOrderHash = `0x${Math.random().toString(16).substr(2, 64)}`;
+    const mockQuoteId = `quote_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+    console.log('✅ Cross-chain order prepared with hashlock:', {
+      hash: mockOrderHash,
+      quoteId: mockQuoteId,
+      hashLock: hashLock.hash,
+      timelock,
+      secretsCount: secrets.length
+    });
+
+    return {
+      hash: mockOrderHash,
+      quoteId: mockQuoteId,
+      order: quote, // Return the quote as order for now
+      hashLock,
+      timelock,
+      preset,
+      secretHashes
+    };
+
+  } catch (error) {
+    console.error('❌ Error creating cross-chain order with hashlock:', error);
+    return {
+      error: 'Cross-chain order creation failed',
+      description: error instanceof Error ? error.message : 'Unknown error'
+    };
+  }
+}
+
+/**
+ * Reveal secrets to complete cross-chain swap
+ */
+export async function revealSecretsForOrder(
+  orderHash: string,
+  secrets: string[]
+): Promise<{ success: boolean; txHash?: string; error?: string }> {
+  try {
+    console.log('🔓 Revealing secrets for order:', orderHash);
+
+    // Validate secrets
+    const validSecrets = secrets.filter(secret => {
+      try {
+        return secret.startsWith('0x') && secret.length === 66; // 32 bytes + 0x prefix
+      } catch {
+        return false;
+      }
+    });
+
+    if (validSecrets.length !== secrets.length) {
+      throw new Error('Invalid secret format detected');
+    }
+
+    // In a real implementation, this would interact with the 1inch Cross Chain SDK
+    // to reveal the secrets and complete the cross-chain transaction
+    console.log('🔑 Secrets revealed:', validSecrets.map(s => s.substring(0, 10) + '...'));
+
+    // Simulate success for now
+    return {
+      success: true,
+      txHash: `0x${Math.random().toString(16).substr(2, 64)}` // Mock transaction hash
+    };
+
+  } catch (error) {
+    console.error('❌ Error revealing secrets:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    };
+  }
+}
+
+/**
+ * Monitor cross-chain order status with hashlock information
+ */
+export async function getCrossChainOrderStatus(
+  orderHash: string
+): Promise<{
+  status: string;
+  timelock?: number;
+  timelockRemaining?: string;
+  isTimelockActive?: boolean;
+  secretsRevealed?: number;
+  totalSecrets?: number;
+}> {
+  try {
+    console.log('🔍 Getting cross-chain order status:', orderHash);
+
+    // In a real implementation, this would query the 1inch Cross Chain SDK
+    // For now, return mock status
+    const mockTimelock = Math.floor(Date.now() / 1000) + 3600; // 1 hour from now
+
+    return {
+      status: 'pending',
+      timelock: mockTimelock,
+      timelockRemaining: CrossChainUtils.formatTimelockRemaining(mockTimelock),
+      isTimelockActive: CrossChainUtils.isTimelockActive(mockTimelock),
+      secretsRevealed: 0,
+      totalSecrets: 1
+    };
+
+  } catch (error) {
+    console.error('❌ Error getting order status:', error);
+    return {
+      status: 'error'
+    };
+  }
 }

@@ -32,7 +32,7 @@ export default function SuccessScreen({
         Tip Sent Successfully!
       </h2>
       <p className="text-gray-600 dark:text-gray-300 mb-6">
-        {crossChainTips.length > 0 
+        {crossChainTips.length > 0
           ? `Your ${crossChainTips[0]?.token || 'tokens'} have been bridged to Stellar. The recipient will receive ${recipientToken} shortly.`
           : `Your tip is being processed via 1inch Fusion+. The recipient will receive ${recipientToken} shortly.`
         }
@@ -88,7 +88,7 @@ export default function SuccessScreen({
               <p><strong>Ethereum Tx:</strong> {tip.txHash}</p>
               <p><strong>Stellar Address:</strong> {tip.stellarAddress.slice(0, 8)}...{tip.stellarAddress.slice(-8)}</p>
               <p className="text-xs mt-1 opacity-75">
-                {tip.token === 'USDC' 
+                {tip.token === 'USDC'
                   ? `${recipientToken} will arrive on Stellar network within 2-5 minutes`
                   : 'Tokens will arrive on Stellar network within 2-5 minutes'
                 }

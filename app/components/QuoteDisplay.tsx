@@ -162,10 +162,13 @@ export default function QuoteDisplay({
         // Use cross-chain quote for Stellar destinations
         console.log('🌉 Fetching cross-chain quote for', recipientToken);
 
+        // For Stellar destinations, we determine the destination token based on recipient preference
+        const dstToken = recipientToken === 'XLM' ? 'native' : 'USDC';
+
         const result = await getCrossChainQuote(
           chainId,
           selectedToken.address,
-          '', // Destination token address not needed for cross-chain
+          dstToken, // Use appropriate destination token for Stellar
           amountInWei,
           recipientToken
         );

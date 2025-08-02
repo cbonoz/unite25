@@ -1,4 +1,5 @@
 // Constants for SwapJar application
+import { randomBytes, createHash } from 'crypto';
 
 // Supported chain IDs
 export const SUPPORTED_CHAINS = {
@@ -65,27 +66,27 @@ export function getFallbackTokens(chainId: ChainId): Token[] {
   if (chainId === SUPPORTED_CHAINS.ETHEREUM) {
     return ETHEREUM_FALLBACK_TOKENS;
   }
-  
+
   if (chainId === SUPPORTED_CHAINS.STELLAR) {
     return STELLAR_FALLBACK_TOKENS;
   }
-  
+
   if (chainId === SUPPORTED_CHAINS.BASE) {
     return BASE_FALLBACK_TOKENS;
   }
-  
+
   if (chainId === SUPPORTED_CHAINS.POLYGON) {
     return POLYGON_FALLBACK_TOKENS;
   }
-  
+
   if (chainId === SUPPORTED_CHAINS.ARBITRUM) {
     return ARBITRUM_FALLBACK_TOKENS;
   }
-  
+
   if (chainId === SUPPORTED_CHAINS.OPTIMISM) {
     return OPTIMISM_FALLBACK_TOKENS;
   }
-  
+
   // Default fallback for unknown chains
   return [
     {
@@ -282,3 +283,178 @@ export const OPTIMISM_FALLBACK_TOKENS: Token[] = [
     logoURI: 'https://tokens.1inch.io/0xdac17f958d2ee523a2206206994597c13d831ec7.png',
   },
 ];
+
+// Cross-chain hashlock and timelock constants
+export const CROSS_CHAIN_CONSTANTS = {
+  // Default timelock duration (24 hours in seconds)
+  DEFAULT_TIMELOCK_DURATION: 24 * 60 * 60,
+
+  // Minimum timelock duration (1 hour in seconds)
+  MIN_TIMELOCK_DURATION: 60 * 60,
+
+  // Maximum timelock duration (7 days in seconds)
+  MAX_TIMELOCK_DURATION: 7 * 24 * 60 * 60,
+
+  // Secret length for hashlock (32 bytes)
+  SECRET_LENGTH: 32,
+
+  // Default preset for cross-chain swaps
+  DEFAULT_PRESET: 'fast' as const,
+} as const;
+
+// Preset options for cross-chain swaps
+export const CROSS_CHAIN_PRESETS = {
+  fast: 'fast',
+  medium: 'medium',
+  slow: 'slow',
+} as const;
+
+export type CrossChainPreset = typeof CROSS_CHAIN_PRESETS[keyof typeof CROSS_CHAIN_PRESETS];
+
+// Cross-chain swap interfaces
+export interface CrossChainSecret {
+  secret: string;
+  hash: string;
+}
+
+export interface CrossChainHashLock {
+  hash: string;
+  secrets: CrossChainSecret[];
+  merkleRoot?: string;
+}
+
+export interface CrossChainOrder {
+  hash: string;
+  quoteId: string;
+  order: Record<string, unknown>;
+  hashLock: CrossChainHashLock;
+  timelock: number;
+  preset: CrossChainPreset;
+  secretHashes: string[];
+}
+
+// Helper functions for cross-chain hashlock/timelock functionality
+export class CrossChainUtils {
+  /**
+   * Generate cryptographically secure secrets for hashlock
+   */
+  static generateSecrets(count: number = 1): string[] {
+    return Array.from({ length: count }).map(() =>
+      '0x' + randomBytes(CROSS_CHAIN_CONSTANTS.SECRET_LENGTH).toString('hex')
+    );
+  }
+
+  /**
+   * Hash a secret for hashlock verification
+   */
+  static hashSecret(secret: string): string {
+    return '0x' + createHash('sha256').update(secret.replace('0x', ''), 'hex').digest('hex');
+  }
+
+  /**
+   * Create a simple hashlock for single fill orders
+   */
+  static createSingleHashLock(secret: string): CrossChainHashLock {
+    const hash = this.hashSecret(secret);
+    return {
+      hash,
+      secrets: [{ secret, hash }],
+    };
+  }
+
+  /**
+   * Create merkle tree hashlock for multiple fill orders
+   */
+  static createMultipleHashLock(secrets: string[]): CrossChainHashLock {
+    const secretObjects = secrets.map(secret => ({
+      secret,
+      hash: this.hashSecret(secret),
+    }));
+
+    // For simplicity, use the first secret hash as merkle root
+    // In production, implement proper merkle tree
+    const merkleRoot = secretObjects[0].hash;
+
+    return {
+      hash: merkleRoot,
+      secrets: secretObjects,
+      merkleRoot,
+    };
+  }
+
+  /**
+   * Get merkle leaves for hashlock (simplified implementation)
+   */
+  static getMerkleLeaves(secrets: string[]): string[] {
+    return secrets.map(secret => this.hashSecret(secret));
+  }
+
+  /**
+   * Calculate timelock expiration timestamp
+   */
+  static calculateTimelock(durationSeconds: number = CROSS_CHAIN_CONSTANTS.DEFAULT_TIMELOCK_DURATION): number {
+    const now = Math.floor(Date.now() / 1000);
+    const clampedDuration = Math.max(
+      CROSS_CHAIN_CONSTANTS.MIN_TIMELOCK_DURATION,
+      Math.min(CROSS_CHAIN_CONSTANTS.MAX_TIMELOCK_DURATION, durationSeconds)
+    );
+    return now + clampedDuration;
+  }
+
+  /**
+   * Validate if timelock is still active
+   */
+  static isTimelockActive(timelock: number): boolean {
+    const now = Math.floor(Date.now() / 1000);
+    return timelock > now;
+  }
+
+  /**
+   * Get time remaining for timelock (in seconds)
+   */
+  static getTimelockRemaining(timelock: number): number {
+    const now = Math.floor(Date.now() / 1000);
+    return Math.max(0, timelock - now);
+  }
+
+  /**
+   * Format timelock remaining time as human readable string
+   */
+  static formatTimelockRemaining(timelock: number): string {
+    const remaining = this.getTimelockRemaining(timelock);
+
+    if (remaining === 0) {
+      return 'Expired';
+    }
+
+    const hours = Math.floor(remaining / 3600);
+    const minutes = Math.floor((remaining % 3600) / 60);
+    const seconds = remaining % 60;
+
+    if (hours > 0) {
+      return `${hours}h ${minutes}m ${seconds}s`;
+    } else if (minutes > 0) {
+      return `${minutes}m ${seconds}s`;
+    } else {
+      return `${seconds}s`;
+    }
+  }
+}
+
+// Example usage constants for cross-chain scenarios
+export const CROSS_CHAIN_EXAMPLES = {
+  POLYGON_TO_BSC_USDT_TO_BNB: {
+    srcChainId: 137, // Polygon
+    dstChainId: 56,  // BSC
+    srcTokenAddress: '0xc2132d05d31c914a87c6611c10748aeb04b58e8f', // USDT on Polygon
+    dstTokenAddress: '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee', // BNB on BSC
+    amount: '10000000', // 10 USDT (6 decimals)
+  },
+  ETHEREUM_TO_POLYGON_ETH_TO_MATIC: {
+    srcChainId: 1,   // Ethereum
+    dstChainId: 137, // Polygon
+    srcTokenAddress: '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee', // ETH
+    dstTokenAddress: '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee', // MATIC
+    amount: '1000000000000000000', // 1 ETH (18 decimals)
+  },
+} as const;

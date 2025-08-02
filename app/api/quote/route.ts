@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 const ONEINCH_AGGREGATION_API = 'https://api.1inch.dev/swap/v6.0';
-const API_KEY = process.env.NEXT_PUBLIC_ONE_INCH_API_KEY;
+const API_KEY = process.env.ONE_INCH_API_KEY;
 
 export async function GET(request: NextRequest) {
   try {

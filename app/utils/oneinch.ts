@@ -3,16 +3,16 @@
 // 1inch API Integration for SwapJar
 // Supports: Fusion+ Swap, Price Feeds, Token Metadata, Wallet Balances, Web3
 
-import { 
-  getFallbackTokens, 
-  SUPPORTED_CHAINS, 
+import {
+  getFallbackTokens,
+  SUPPORTED_CHAINS,
   getStablecoinAddress,
   type Token,
-  type ChainId 
+  type ChainId
 } from '../constants';
 
 // Re-export constants and types for backward compatibility
-export { SUPPORTED_CHAINS, type Token, type ChainId, getStablecoinAddress };
+export { SUPPORTED_CHAINS, type Token, type ChainId };
 
 // Common interfaces
 export interface Balance {

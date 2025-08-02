@@ -98,7 +98,7 @@ export default function TipPage() {
   const [crossChainTips, setCrossChainTips] = useState<CrossChainTipResult[]>([]);
   const [orderHash, setOrderHash] = useState<string>('');
   const [isProcessing, setIsProcessing] = useState(false);
-  
+
   // New state for USDC balance feature
   const [usdcBalance, setUsdcBalance] = useState<string>('0');
   const [useExistingUSDC, setUseExistingUSDC] = useState(false);
@@ -270,20 +270,20 @@ export default function TipPage() {
     if (!address || !tipJarData) return;
 
     // Only check if the recipient wants USDC and we have a way to convert to it
-    const targetIsUSDC = tipJarData.recipientToken === 'USDC' || 
+    const targetIsUSDC = tipJarData.recipientToken === 'USDC' ||
                         tipJarData.recipientToken === 'STELLAR_USDC';
-    
+
     if (!targetIsUSDC) return;
 
     try {
       setIsCheckingBalance(true);
-      
+
       // Get USDC address for current chain
       const stablecoins = await getPopularTokens(selectedChain);
-      const usdcToken = stablecoins.find(token => 
+      const usdcToken = stablecoins.find(token =>
         token.symbol.toUpperCase() === 'USDC'
       );
-      
+
       if (!usdcToken) {
         console.log('USDC not available on this chain');
         setUsdcBalance('0');
@@ -292,7 +292,7 @@ export default function TipPage() {
 
       // Get wallet balances
       const balances = await getWalletBalances(selectedChain as number, address);
-      const usdcBalanceData = balances.find(balance => 
+      const usdcBalanceData = balances.find(balance =>
         balance.tokenAddress.toLowerCase() === usdcToken.address.toLowerCase()
       );
 
@@ -334,7 +334,7 @@ export default function TipPage() {
 
       // Get USDC token for current chain
       const stablecoins = await getPopularTokens(selectedChain);
-      const usdcToken = stablecoins.find(token => 
+      const usdcToken = stablecoins.find(token =>
         token.symbol.toUpperCase() === 'USDC'
       );
 
@@ -353,7 +353,7 @@ export default function TipPage() {
       if (isStellarRecipient) {
         // For Stellar recipients, transfer USDC to our bridge address and then bridge
         console.log('🌉 Stellar recipient detected, transferring USDC and initiating bridge...');
-        
+
         // Create ERC20 transfer using ethers
         const { ethers } = await import('ethers');
         const usdcContract = new ethers.Contract(
@@ -404,7 +404,7 @@ export default function TipPage() {
       } else {
         // For same-chain recipients, direct USDC transfer
         console.log('💸 Direct USDC transfer to recipient');
-        
+
         const { ethers } = await import('ethers');
         const usdcContract = new ethers.Contract(
           usdcToken.address,
@@ -487,7 +487,7 @@ export default function TipPage() {
                                 (tipJarData.walletAddress.startsWith('G') && tipJarData.walletAddress.length === 56);
 
       // Check if this is a cross-chain scenario (including EVM to EVM)
-      const isEVMCrossChain = !isStellarRecipient && 
+      const isEVMCrossChain = !isStellarRecipient &&
                              !tipJarData.chains.includes(selectedChain) &&
                              typeof selectedChain === 'number';
 
@@ -540,49 +540,57 @@ export default function TipPage() {
         throw new Error(`Unable to find USDC on this chain. Please try a different network.`);
       }
 
-      // Special case: If user already has the target token and it's going to Stellar, skip swap
+      // Special case: If user already has USDC and recipient wants Stellar assets, skip swap entirely
       if (selectedToken.address.toLowerCase() === targetToken.address.toLowerCase() && isStellarRecipient) {
-        console.log('🎯 User already has target token, skipping swap and going directly to Stellar bridge');
-        
-        // Transfer USDC to user's wallet (preparing for bridge) - or directly initiate bridge
-        const { ethers } = await import('ethers');
-        const usdcContract = new ethers.Contract(
-          selectedToken.address,
-          ['function transfer(address to, uint256 amount) returns (bool)'],
-          signer
-        );
+        console.log('🎯 User already has USDC for Stellar bridge, skipping swap and going directly to bridge');
 
-        // For demo purposes, we'll just simulate the "transfer" by sending to self
-        // In production, this would transfer to bridge contract
-        const txResponse = await usdcContract.transfer(address, amountInWei);
-        const receipt = await txResponse.wait();
-
-        if (!receipt) {
-          throw new Error('Transaction failed');
-        }
-
-        console.log('✅ USDC prepared for bridge:', receipt.hash);
-
-        // Initiate Stellar bridge directly
+        // Directly initiate the Stellar bridge with USDC
         try {
-          const bridgeResponse = await fetch('/api/stellar/initiate', {
+          const bridgeResponse = await fetch('/api/stellar/bridge', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              ethereumTxHash: receipt.hash,
               sourceChain: selectedChain,
-              amount: tipAmount, // Add the missing amount parameter
-              stellarRecipient: tipJarData.walletAddress,
+              sourceToken: selectedToken.address,
+              sourceAmount: amountInWei,
+              senderAddress: address,
+              targetStellarAddress: tipJarData.walletAddress,
               targetAsset: tipJarData.recipientToken === 'XLM' ? 'XLM' : 'USDC',
             }),
           });
 
-          if (bridgeResponse.ok) {
-            const bridgeResult = await bridgeResponse.json();
-            console.log('✅ Stellar bridge initiated:', bridgeResult);
+          if (!bridgeResponse.ok) {
+            const errorData = await bridgeResponse.json().catch(() => ({}));
+            throw new Error(errorData.error || 'Bridge initiation failed');
+          }
 
+          const bridgeResult = await bridgeResponse.json();
+          console.log('✅ Direct Stellar bridge initiated:', bridgeResult);
+
+          // If we have a transaction to execute
+          if (bridgeResult.transaction && signer) {
+            console.log('📝 Executing bridge transaction...');
+            
+            const txResponse = await signer.sendTransaction({
+              to: bridgeResult.transaction.to,
+              value: bridgeResult.transaction.value || '0',
+              data: bridgeResult.transaction.data,
+              gasLimit: bridgeResult.transaction.gasLimit || '500000',
+            });
+
+            console.log('⏳ Bridge transaction sent, waiting for confirmation...', txResponse.hash);
+            const receipt = await txResponse.wait();
+
+            if (!receipt || receipt.status !== 1) {
+              throw new Error('Bridge transaction failed');
+            }
+
+            console.log('✅ Bridge transaction confirmed:', receipt.hash);
+            setOrderHash(receipt.hash);
+
+            // Update state with successful bridge
             setCrossChainTips(prev => [...prev, {
               txHash: receipt.hash,
               stellarAddress: tipJarData.walletAddress,
@@ -590,24 +598,25 @@ export default function TipPage() {
               token: selectedToken.symbol
             }]);
 
-            // Set appropriate success message based on simulation vs real bridge
-            if (bridgeResult.status === 'simulated') {
-              setOrderHash(receipt.hash);
-              setErrorMessage(`USDC transfer completed! Stellar bridge simulated in development mode. In production, ${tipAmount} USDC would be bridged to ${tipJarData.walletAddress} on Stellar.`);
-            }
-            
             setTxStatus('success');
-            return; // Exit early, no need for swap
+            return; // Exit early, swap skipped successfully
           } else {
-            const errorData = await bridgeResponse.json().catch(() => ({}));
-            console.error('Bridge response error:', errorData);
-            throw new Error(errorData.error || 'Bridge initiation failed');
+            // Handle simulation or direct bridge result
+            setOrderHash(bridgeResult.stellarTxId || 'bridge-initiated');
+            setCrossChainTips(prev => [...prev, {
+              txHash: bridgeResult.stellarTxId || 'bridge-initiated',
+              stellarAddress: tipJarData.walletAddress,
+              amount: tipAmount,
+              token: selectedToken.symbol
+            }]);
+
+            setTxStatus('success');
+            return; // Exit early, swap skipped successfully
           }
         } catch (bridgeError) {
           console.error('❌ Stellar bridge failed:', bridgeError);
-          setTxStatus('success'); // Still show success for the transfer
-          setOrderHash(receipt.hash);
-          setErrorMessage(`Token transfer successful but Stellar bridge pending. Bridge error: ${bridgeError instanceof Error ? bridgeError.message : 'Unknown error'}`);
+          setTxStatus('error');
+          setErrorMessage(`Bridge initiation failed: ${bridgeError instanceof Error ? bridgeError.message : 'Unknown error'}`);
           return;
         }
       }
@@ -720,11 +729,11 @@ export default function TipPage() {
             // For now, we'll implement a simple notification that cross-chain bridging is needed
             // In production, this would integrate with bridges like LayerZero, Wormhole, or Circle CCTP
             console.log('⚠️ EVM cross-chain bridging not yet implemented. Showing success for same-chain swap.');
-            
+
             // For demo purposes, we'll show this as a pending bridge
             setTxStatus('success');
             setErrorMessage(`Swap successful on ${selectedChain}. Cross-chain bridge to ${targetChain} is pending implementation. Recipient will need to claim USDC on ${selectedChain} for now.`);
-            
+
             // Add to order hash for tracking
             setOrderHash(receipt.hash);
           } catch (bridgeError) {

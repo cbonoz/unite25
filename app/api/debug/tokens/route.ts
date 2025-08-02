@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
     const response = await fetch(tokensUrl, {
       method: 'GET',
       headers: {
-        'Authorization': `Bearer ${process.env.NEXT_PUBLIC_ONE_INCH_API_KEY}`,
+        'Authorization': `Bearer ${process.env.ONE_INCH_API_KEY}`,
         'Accept': 'application/json',
       }
     });

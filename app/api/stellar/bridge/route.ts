@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { createFusionOrder, getPopularTokens, SUPPORTED_CHAINS } from '@/app/utils/oneinch';
+import { getPopularTokens, SUPPORTED_CHAINS } from '@/app/utils/oneinch';
+import { createOptimizedSwap } from '@/app/utils/fusion';
 import type { ChainId } from '@/app/utils/oneinch';
 
 interface BridgeRequest {
@@ -55,12 +56,12 @@ export async function POST(request: Request) {
         throw new Error('No suitable stablecoin found on source chain');
       }
 
-      console.log('🔄 Creating Fusion+ order for cross-chain bridge...');
+      console.log('🔄 Creating optimized swap for cross-chain bridge...');
 
-      // Create a Fusion+ order where the bridge receives the tokens
+      // Create an optimized swap order where the bridge receives the tokens
       // and will send equivalent value to Stellar
-      const fusionOrder = await createFusionOrder(
-        sourceChain,
+      const swapResult = await createOptimizedSwap(
+        Number(sourceChain),
         sourceToken,
         targetToken.address, // Convert to stablecoin
         sourceAmount,
@@ -68,7 +69,7 @@ export async function POST(request: Request) {
         BRIDGE_ETHEREUM_ADDRESS // Bridge receives the tokens
       );
 
-      console.log('✅ Fusion+ bridge order created:', fusionOrder);
+      console.log('✅ Bridge swap order created:', swapResult);
 
       // Generate a unique bridge transaction ID
       const bridgeId = `eth-stellar-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -82,7 +83,7 @@ export async function POST(request: Request) {
       //   senderAddress,
       //   targetStellarAddress,
       //   targetAsset,
-      //   fusionOrderHash: fusionOrder.orderHash,
+      //   swapOrderHash: swapResult.orderHash || swapResult.tx?.hash,
       //   status: 'pending',
       //   createdAt: new Date(),
       // });
@@ -93,10 +94,27 @@ export async function POST(request: Request) {
       // Calculate Stellar amount (simplified conversion)
       const stellarAmount = (parseFloat(sourceAmount) / Math.pow(10, 18) * 0.98).toString(); // 2% bridge fee
 
+      // Check if swap was successful
+      if (!swapResult.success) {
+        const errorMessage = ('error' in swapResult) ? swapResult.error : 'Failed to create swap for bridge';
+        throw new Error(errorMessage || 'Failed to create swap for bridge');
+      }
+
+      // Extract transaction data depending on the result type
+      let transactionData = null;
+      if ('transaction' in swapResult) {
+        transactionData = swapResult.transaction;
+      } else if ('order' in swapResult) {
+        transactionData = swapResult.order;
+      } else if ('quote' in swapResult) {
+        transactionData = swapResult.quote;
+      }
+
       return NextResponse.json({
         success: true,
         bridgeId,
-        transaction: fusionOrder.transaction,
+        transaction: transactionData,
+        orderHash: swapResult.orderHash,
         stellarTransfer: {
           targetAddress: targetStellarAddress,
           amount: stellarAmount,

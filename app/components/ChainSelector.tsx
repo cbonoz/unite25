@@ -5,18 +5,20 @@ interface ChainSelectorProps {
   selectedChain: ChainId;
   chainNames: Record<ChainId, string>;
   onChainSelect: (chainId: ChainId) => void;
+  prompt?: string;
 }
 
 export default function ChainSelector({
   chains,
   selectedChain,
   chainNames,
+  prompt= 'Select chain to send payment from',
   onChainSelect
 }: ChainSelectorProps) {
   return (
     <div className="mb-6">
       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-        Select Chain
+      {prompt}
       </label>
       <div className="grid grid-cols-3 gap-2">
         {chains.map((chainId) => (

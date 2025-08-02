@@ -1,11 +1,38 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const API_KEY = process.env.NEXT_PUBLIC_ONE_INCH_API_KEY;
+const API_KEY = process.env.ONE_INCH_API_KEY;
 const BASE_URL = 'https://api.1inch.dev';
+
+// Validate API key
+function validateApiKey(): boolean {
+  if (!API_KEY) {
+    console.warn('⚠️ 1inch API key not configured');
+    return false;
+  }
+
+  if (API_KEY.length < 32) {
+    console.warn('⚠️ 1inch API key appears to be invalid (too short)');
+    return false;
+  }
+
+  return true;
+}
 
 // Get swap transaction from 1inch API (backend proxy to avoid CORS)
 export async function POST(request: NextRequest) {
   try {
+    // Validate API key first
+    if (!validateApiKey()) {
+      return NextResponse.json(
+        {
+          error: 'Invalid or missing 1inch API key',
+          details: 'Please configure ONE_INCH_API_KEY in your environment variables',
+          success: false
+        },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
     const {
       chainId,
@@ -56,12 +83,29 @@ export async function POST(request: NextRequest) {
 
     if (!swapResponse.ok) {
       const errorData = await swapResponse.text();
-      console.error('❌ 1inch Swap API error:', swapResponse.status, errorData);
+      console.error('❌ 1inch Swap API error:', {
+        status: swapResponse.status,
+        statusText: swapResponse.statusText,
+        error: errorData,
+        apiKey: API_KEY ? `${API_KEY.substring(0, 8)}...` : 'NOT_SET'
+      });
+
+      // Handle specific error cases
+      if (swapResponse.status === 401) {
+        return NextResponse.json(
+          {
+            error: `Swap API error: ${swapResponse.status}`,
+            details: 'Invalid API key - please check your 1inch API key in environment variables',
+            success: false
+          },
+          { status: 401 }
+        );
+      }
 
       return NextResponse.json(
         {
           error: `Swap API error: ${swapResponse.status}`,
-          details: errorData,
+          details: errorData || swapResponse.statusText,
           success: false
         },
         { status: swapResponse.status }

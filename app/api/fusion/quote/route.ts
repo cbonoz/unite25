@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const API_KEY = process.env.NEXT_PUBLIC_ONE_INCH_API_KEY;
+const API_KEY = process.env.ONE_INCH_API_KEY;
 const BASE_URL = 'https://api.1inch.dev';
 
 // Get quote from 1inch API (backend proxy to avoid CORS)
