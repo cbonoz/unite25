@@ -33,6 +33,7 @@ export interface TipJarConfig {
   createdAt: string;
   isActive: boolean;
   customMessage?: string;
+  successMessage?: string;
   customization?: {
     primaryColor?: string;
     backgroundColor?: string;
@@ -192,6 +193,7 @@ export async function createTipJar(data: {
   recipientToken: 'USDC' | 'DAI' | 'USDT' | 'XLM' | 'STELLAR_USDC';
   chains: ChainId[];
   customMessage?: string;
+  successMessage?: string;
   customization?: TipJarConfig['customization'];
 }): Promise<{ config: TipJarConfig; cid: string }> {
   try {
@@ -208,6 +210,7 @@ export async function createTipJar(data: {
       createdAt: now,
       isActive: true,
       customMessage: data.customMessage,
+      successMessage: data.successMessage,
       customization: data.customization,
     };
 

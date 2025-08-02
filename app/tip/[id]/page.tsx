@@ -27,11 +27,21 @@ import {
 import { createOptimizedSwap, initiateStellarBridge } from '../../utils/fusion';
 
 interface TipJarData {
+  id: string;
   name: string;
+  description?: string;
   walletAddress: string;
   recipientToken: 'USDC' | 'DAI' | 'USDT' | 'XLM' | 'STELLAR_USDC';
   chains: ChainId[];
+  createdAt: string;
+  isActive: boolean;
   customMessage?: string;
+  successMessage?: string;
+  customization?: {
+    primaryColor?: string;
+    backgroundColor?: string;
+    logoUrl?: string;
+  };
 }
 
 interface StellarTipResult {
@@ -126,11 +136,17 @@ export default function TipPage() {
 
         // Convert the config to the expected TipJarData format
         const tipJarData: TipJarData = {
+          id: config.id,
           name: config.name,
+          description: config.description,
           walletAddress: config.walletAddress,
           recipientToken: config.recipientToken,
           chains: config.chains as ChainId[],
+          createdAt: config.createdAt,
+          isActive: config.isActive,
           customMessage: config.customMessage,
+          successMessage: config.successMessage,
+          customization: config.customization,
         };
 
         console.log(`✅ Converted to TipJarData format:`, tipJarData);
@@ -270,7 +286,6 @@ export default function TipPage() {
     }
 
     try {
-      setIsLoading(true);
       setTxStatus('pending');
       setErrorMessage('');
       setIsProcessing(true);
@@ -515,8 +530,8 @@ export default function TipPage() {
     // Continue to render the form but show error in the TipForm component
   }
 
-  // Don't render main content if we don't have tipJarData yet
-  if (!tipJarData) {
+  // Don't render main content if we don't have tipJarData yet AND we're in initial loading state
+  if (!tipJarData && isLoading) {
     return (
       <AppLayout>
         <div className="max-w-2xl mx-auto text-center">
@@ -526,6 +541,23 @@ export default function TipPage() {
             <div className="h-4 bg-gray-300 rounded"></div>
           </div>
           <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
+      </AppLayout>
+    );
+  }
+
+  // If no tipJarData and not loading, something went wrong
+  if (!tipJarData) {
+    return (
+      <AppLayout>
+        <div className="max-w-2xl mx-auto text-center">
+          <div className="text-gray-500 text-6xl mb-4">🤔</div>
+          <h1 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">
+            Tip Jar Not Available
+          </h1>
+          <p className="text-gray-600 dark:text-gray-300">
+            Unable to load tip jar configuration
+          </p>
         </div>
       </AppLayout>
     );
@@ -552,8 +584,26 @@ export default function TipPage() {
               orderHash={orderHash}
               stellarTips={stellarTips}
               crossChainTips={crossChainTips}
+              successMessage={tipJarData.successMessage}
               onSendAnother={handleGoBack}
             />
+          ) : txStatus === 'pending' || isProcessing ? (
+            <div className="text-center py-8">
+              <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
+              <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-2">
+                Transaction in Progress
+              </h3>
+              <p className="text-gray-600 dark:text-gray-300 mb-4">
+                Awaiting confirmation....
+              </p>
+              <div className="text-sm text-gray-500 dark:text-gray-400">
+                <p>• Preparing swap transaction</p>
+                <p>• Waiting for blockchain confirmation</p>
+                {tipJarData.recipientToken === 'XLM' || tipJarData.recipientToken === 'STELLAR_USDC' ? (
+                  <p>• Initiating cross-chain bridge to Stellar</p>
+                ) : null}
+              </div>
+            </div>
           ) : (
             <>
               {/* Wallet Connection */}

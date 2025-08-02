@@ -13,6 +13,8 @@ interface TipJarSuccessProps {
     recipientToken: 'USDC' | 'DAI' | 'USDT' | 'XLM' | 'STELLAR_USDC';
     chains: ChainId[];
     customMessage: string;
+    successMessage?: string;
+    showSuccessMessage?: boolean;
   };
   onCreateAnother: () => void;
 }

@@ -57,12 +57,12 @@ export async function POST(request: NextRequest) {
     if (!swapResponse.ok) {
       const errorData = await swapResponse.text();
       console.error('❌ 1inch Swap API error:', swapResponse.status, errorData);
-      
+
       return NextResponse.json(
-        { 
+        {
           error: `Swap API error: ${swapResponse.status}`,
           details: errorData,
-          success: false 
+          success: false
         },
         { status: swapResponse.status }
       );

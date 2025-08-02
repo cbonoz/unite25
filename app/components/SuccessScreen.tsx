@@ -13,6 +13,7 @@ interface SuccessScreenProps {
     amount: string;
     token: string;
   }>;
+  successMessage?: string;
   onSendAnother: () => void;
 }
 
@@ -21,6 +22,7 @@ export default function SuccessScreen({
   orderHash,
   stellarTips,
   crossChainTips,
+  successMessage,
   onSendAnother
 }: SuccessScreenProps) {
   return (
@@ -32,6 +34,15 @@ export default function SuccessScreen({
       <p className="text-gray-600 dark:text-gray-300 mb-6">
         Your tip is being processed via 1inch Fusion+. The recipient will receive {recipientToken} shortly.
       </p>
+
+      {/* Custom Success Message */}
+      {successMessage && (
+        <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+          <p className="text-blue-800 dark:text-blue-200 text-lg">
+            {successMessage}
+          </p>
+        </div>
+      )}
 
       {/* Order Details */}
       {orderHash && (

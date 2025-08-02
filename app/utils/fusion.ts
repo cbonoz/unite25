@@ -199,7 +199,7 @@ export async function createOptimizedSwap(
 
     // Find USDC address on the source chain
     const usdcAddresses: Record<number, string> = {
-      1: '0xA0b86a33E6441C8C7b60b8B5fa46a80C42a59C5d', // Ethereum USDC
+      1: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48', // Ethereum USDC (corrected)
       137: '0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174', // Polygon USDC
       42161: '0xaf88d065e77c8cC2239327C5EDb3A432268e5831', // Arbitrum USDC
       10: '0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85', // Optimism USDC

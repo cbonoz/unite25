@@ -8,13 +8,15 @@ interface QuoteDisplayProps {
   recipientToken: string;
   tipAmount: string;
   chainId: number;
+  availableTokens?: Token[];
 }
 
 export default function QuoteDisplay({
   selectedToken,
   recipientToken,
   tipAmount,
-  chainId
+  chainId,
+  availableTokens = []
 }: QuoteDisplayProps) {
   const [quote, setQuote] = useState<SpotPriceQuote | null>(null);
   const [crossChainQuote, setCrossChainQuote] = useState<CrossChainQuote | null>(null);
@@ -24,7 +26,38 @@ export default function QuoteDisplay({
   const [isCrossChain, setIsCrossChain] = useState(false);
 
   // Get destination token address based on recipient token preference
+  // Use the actual token addresses from the loaded tokens instead of hardcoded addresses
   const getDestinationTokenAddress = (recipientToken: string): string | null => {
+    // For cross-chain scenarios (XLM, STELLAR_USDC), we don't need destination addresses
+    if (recipientToken === 'XLM' || recipientToken === 'STELLAR_USDC') {
+      return null;
+    }
+
+    // Try to find the token in the available tokens first (most reliable)
+    switch (recipientToken) {
+      case 'USDC':
+        const usdcToken = availableTokens.find((token: Token) =>
+          token.symbol === 'USDC' || token.symbol === 'USD Coin'
+        );
+        if (usdcToken) return usdcToken.address;
+        break;
+
+      case 'DAI':
+        const daiToken = availableTokens.find((token: Token) =>
+          token.symbol === 'DAI' || token.name?.includes('Dai')
+        );
+        if (daiToken) return daiToken.address;
+        break;
+
+      case 'USDT':
+        const usdtToken = availableTokens.find((token: Token) =>
+          token.symbol === 'USDT' || token.symbol === 'Tether'
+        );
+        if (usdtToken) return usdtToken.address;
+        break;
+    }
+
+    // Fallback to hardcoded addresses as last resort
     if (chainId === 1) {
       // Ethereum Mainnet
       const tokens = COMMON_TOKEN_ADDRESSES[1];
@@ -57,6 +90,54 @@ export default function QuoteDisplay({
     return null; // Unsupported chain
   };
 
+  // Format cross-chain amount display
+  const formatCrossChainAmount = (crossChainQuote: CrossChainQuote, recipientToken: string): string => {
+    if (recipientToken === 'XLM') {
+      const xlmAmount = parseFloat(crossChainQuote.dstAmount) / Math.pow(10, 7); // XLM has 7 decimals
+      return xlmAmount.toFixed(4);
+    } else if (recipientToken === 'STELLAR_USDC') {
+      const usdcAmount = parseFloat(crossChainQuote.dstAmount) / Math.pow(10, 6); // USDC has 6 decimals
+      return usdcAmount.toFixed(4);
+    } else {
+      // Generic formatting
+      const amount = parseFloat(crossChainQuote.dstAmount) / Math.pow(10, 18);
+      return amount.toFixed(4);
+    }
+  };
+
+  // Get proper decimals for destination token
+  const getDestinationTokenDecimals = (recipientToken: string): number => {
+    switch (recipientToken) {
+      case 'USDC':
+      case 'USDT':
+        return 6;
+      case 'DAI':
+      case 'ETH':
+        return 18;
+      case 'XLM':
+        return 7;
+      default:
+        return 18; // Default to 18 decimals
+    }
+  };
+
+  // Format amount display with proper decimals
+  const formatAmountDisplay = (amount: string, decimals: number): string => {
+    try {
+      const normalizedAmount = parseFloat(amount) / Math.pow(10, decimals);
+      console.log('🔢 Amount formatting:', {
+        rawAmount: amount,
+        decimals,
+        normalizedAmount,
+        formatted: normalizedAmount.toFixed(4)
+      });
+      return normalizedAmount.toFixed(4);
+    } catch (error) {
+      console.error('Error formatting amount:', error);
+      return '0.0000';
+    }
+  };
+
   // Fetch quote from 1inch API (regular or cross-chain)
   const fetchQuote = async () => {
     if (!selectedToken || !tipAmount || parseFloat(tipAmount) <= 0) {
@@ -80,7 +161,7 @@ export default function QuoteDisplay({
       if (requiresCrossChain) {
         // Use cross-chain quote for Stellar destinations
         console.log('🌉 Fetching cross-chain quote for', recipientToken);
-        
+
         const result = await getCrossChainQuote(
           chainId,
           selectedToken.address,
@@ -90,7 +171,8 @@ export default function QuoteDisplay({
         );
 
         if ('error' in result) {
-          setError(result.description || result.error);
+          console.error('❌ Cross-chain quote error:', result.error, result.description);
+          setError(null); // Don't show error in UI
           setCrossChainQuote(null);
         } else {
           setCrossChainQuote(result);
@@ -102,7 +184,8 @@ export default function QuoteDisplay({
         // Use regular 1inch quote for same-chain swaps
         const dstTokenAddress = getDestinationTokenAddress(recipientToken);
         if (!dstTokenAddress) {
-          setError(`${recipientToken} not supported on this chain`);
+          console.error('❌ Destination token not supported:', recipientToken, 'on chain', chainId);
+          setError(null); // Don't show error in UI
           return;
         }
 
@@ -114,7 +197,8 @@ export default function QuoteDisplay({
         );
 
         if ('error' in result) {
-          setError(result.description || result.error);
+          console.error('❌ Regular quote error:', result.error, result.description);
+          setError(null); // Don't show error in UI
           setQuote(null);
         } else {
           setQuote(result);
@@ -124,7 +208,8 @@ export default function QuoteDisplay({
         setCrossChainQuote(null); // Clear cross-chain quote
       }
     } catch (err) {
-      setError('Failed to fetch quote');
+      console.error('❌ Error fetching quote:', err);
+      setError(null); // Don't show error in UI, just log it
       setQuote(null);
       setCrossChainQuote(null);
     } finally {
@@ -174,6 +259,13 @@ export default function QuoteDisplay({
         </p>
       )}
 
+      {/* Show "No quote available" when no quote and not loading */}
+      {!quote && !crossChainQuote && !isLoading && !error && (
+        <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
+          📊 No quote available
+        </p>
+      )}
+
       {/* Regular 1inch Quote Display */}
       {quote && !isLoading && !isCrossChain && (
         <div className="mt-2 space-y-1">
@@ -183,11 +275,11 @@ export default function QuoteDisplay({
               selectedToken.symbol,
               recipientToken,
               selectedToken.decimals,
-              18 // Most stablecoins have 18 decimals
+              getDestinationTokenDecimals(recipientToken)
             )}
           </p>
           <p className="text-green-700 dark:text-green-300 text-xs">
-            You&apos;ll receive ≈ {(parseFloat(quote.dstAmount) / Math.pow(10, 18)).toFixed(4)} {recipientToken}
+            You&apos;ll receive ≈ {formatAmountDisplay(quote.dstAmount, getDestinationTokenDecimals(recipientToken))} {recipientToken}
           </p>
           {quote.gasFee && parseFloat(quote.gasFee) > 0 && (
             <p className="text-green-600 dark:text-green-400 text-xs">

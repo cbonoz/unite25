@@ -15,6 +15,7 @@ interface FormData {
   recipientToken: 'USDC' | 'DAI' | 'USDT' | 'XLM' | 'STELLAR_USDC';
   selectedChains: ChainId[];
   customMessage: string;
+  successMessage: string;
 }
 
 interface CreatedTipJar {
@@ -25,6 +26,7 @@ interface CreatedTipJar {
     recipientToken: 'USDC' | 'DAI' | 'USDT' | 'XLM' | 'STELLAR_USDC';
     chains: ChainId[];
     customMessage: string;
+    successMessage?: string;
   };
 }
 
@@ -36,6 +38,7 @@ const CreatePage = () => {
     recipientToken: 'USDC',
     selectedChains: [SUPPORTED_CHAINS.ETHEREUM],
     customMessage: '',
+    successMessage: '',
   });
   const [isCreating, setIsCreating] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -108,6 +111,7 @@ const CreatePage = () => {
         recipientToken: formData.recipientToken,
         chains: formData.selectedChains,
         customMessage: formData.customMessage || `Send tips in any token, I'll receive ${formData.recipientToken}`,
+        successMessage: formData.successMessage,
         customization: {
           primaryColor: '#3B82F6', // Default blue
           backgroundColor: '#F8FAFC', // Default light background
@@ -125,6 +129,7 @@ const CreatePage = () => {
           recipientToken: formData.recipientToken,
           chains: formData.selectedChains,
           customMessage: formData.customMessage,
+          successMessage: formData.successMessage,
         }
       });
     } catch (error) {
@@ -143,6 +148,7 @@ const CreatePage = () => {
       recipientToken: 'USDC',
       selectedChains: [SUPPORTED_CHAINS.ETHEREUM],
       customMessage: '',
+      successMessage: '',
     });
     setErrors({});
   };
@@ -184,6 +190,7 @@ const CreatePage = () => {
                         recipientToken: 'USDC',
                         selectedChains: [SUPPORTED_CHAINS.ETHEREUM, 'stellar' as ChainId],
                         customMessage: "Help us celebrate our special day! Your tips will go toward our honeymoon in Italy. We accept any token from any chain - it all converts to USDC automatically! 🇮🇹✨",
+                        successMessage: "Thank you for celebrating with us! ❤️ Your donation means the world to us.",
                       });
                       setErrors({});
                     }}
@@ -270,6 +277,22 @@ const CreatePage = () => {
                     />
                     <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                       This message will be displayed on your tip jar page. Leave blank to use default.
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Success Message (Optional)
+                    </label>
+                    <textarea
+                      value={formData.successMessage}
+                      onChange={(e) => handleInputChange('successMessage', e.target.value)}
+                      placeholder="Thank you for your donation! Your support means a lot to us."
+                      rows={3}
+                      className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white resize-none"
+                    />
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                      This message will be shown after a successful donation. Leave blank to only show default message.
                     </p>
                   </div>
 
