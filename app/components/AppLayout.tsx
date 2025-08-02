@@ -24,7 +24,6 @@ export default function AppLayout({ children, className = '' }: AppLayoutProps) 
             <div className="flex space-x-6 text-sm">
               <a href="#" className="hover:text-blue-400 transition-colors">Documentation</a>
               <a href="https://github.com/cbonoz/unite25" className="hover:text-blue-400 transition-colors">GitHub</a>
-              <a href="#" className="hover:text-blue-400 transition-colors">Support</a>
             </div>
           </div>
           <div className="border-t border-gray-700 mt-6 pt-6 text-center text-gray-400 text-sm">

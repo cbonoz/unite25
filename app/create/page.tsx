@@ -46,11 +46,11 @@ const CreatePage = () => {
 
   const chainOptions = [
     { id: SUPPORTED_CHAINS.ETHEREUM, name: 'Ethereum', color: 'bg-blue-500' },
-    // { id: SUPPORTED_CHAINS.BASE, name: 'Base', color: 'bg-blue-300' },
-    // { id: SUPPORTED_CHAINS.OPTIMISM, name: 'Optimism', color: 'bg-red-500' },
+    { id: SUPPORTED_CHAINS.BASE, name: 'Base', color: 'bg-blue-300' },
+    { id: SUPPORTED_CHAINS.OPTIMISM, name: 'Optimism', color: 'bg-red-500' },
     { id: SUPPORTED_CHAINS.POLYGON, name: 'Polygon', color: 'bg-purple-500' },
     // { id: SUPPORTED_CHAINS.ARBITRUM, name: 'Arbitrum', color: 'bg-blue-400' },
-    { id: 'stellar' as ChainId, name: 'Stellar', color: 'bg-red-500' },
+    { id: 'stellar' as ChainId, name: 'Stellar', color: 'bg-green-500' },
   ];
 
   const validateForm = () => {
@@ -220,29 +220,6 @@ const CreatePage = () => {
                     )}
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Wallet Address *
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.walletAddress}
-                      onChange={(e) => handleInputChange('walletAddress', e.target.value)}
-                      placeholder={formData.selectedChains.includes('stellar' as ChainId) && formData.selectedChains.length === 1 ? 'G...' : '0x...'}
-                      className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white ${
-                        errors.walletAddress ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-                      }`}
-                    />
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                      {formData.selectedChains.includes('stellar' as ChainId) && formData.selectedChains.length === 1
-                        ? 'Enter your Stellar address (starts with G)'
-                        : 'Enter your Ethereum address (starts with 0x)'
-                      }
-                    </p>
-                    {errors.walletAddress && (
-                      <p className="text-red-500 text-sm mt-1">{errors.walletAddress}</p>
-                    )}
-                  </div>
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -264,6 +241,30 @@ const CreatePage = () => {
                     </p>
                   </div>
 
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Wallet address
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.walletAddress}
+                      onChange={(e) => handleInputChange('walletAddress', e.target.value)}
+                      placeholder={formData.selectedChains.includes('stellar' as ChainId) && formData.selectedChains.length === 1 ? 'G...' : '0x...'}
+                      className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white ${
+                        errors.walletAddress ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+                      }`}
+                    />
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                      Enter your wallet address
+                      {/* {formData.selectedChains.includes('stellar' as ChainId) && formData.selectedChains.length === 1
+                        ? 'Enter your Stellar address (starts with G)'
+                        : 'Enter your Ethereum address (starts with 0x)'
+                      } */}
+                    </p>
+                    {errors.walletAddress && (
+                      <p className="text-red-500 text-sm mt-1">{errors.walletAddress}</p>
+                    )}
+                  </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Custom Message (Optional)

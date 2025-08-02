@@ -32,7 +32,10 @@ export default function SuccessScreen({
         Tip Sent Successfully!
       </h2>
       <p className="text-gray-600 dark:text-gray-300 mb-6">
-        Your tip is being processed via 1inch Fusion+. The recipient will receive {recipientToken} shortly.
+        {crossChainTips.length > 0 
+          ? `Your ${crossChainTips[0]?.token || 'tokens'} have been bridged to Stellar. The recipient will receive ${recipientToken} shortly.`
+          : `Your tip is being processed via 1inch Fusion+. The recipient will receive ${recipientToken} shortly.`
+        }
       </p>
 
       {/* Custom Success Message */}
@@ -48,10 +51,10 @@ export default function SuccessScreen({
       {orderHash && (
         <div className="mb-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
           <h3 className="font-semibold text-green-800 dark:text-green-200 mb-2">
-            🔗 Fusion+ Order Details
+            {crossChainTips.length > 0 ? '🌉 Bridge Transaction' : '🔗 Fusion+ Order Details'}
           </h3>
           <div className="text-sm text-green-700 dark:text-green-300">
-            <p><strong>Order Hash:</strong></p>
+            <p><strong>{crossChainTips.length > 0 ? 'Transaction Hash:' : 'Order Hash:'}</strong></p>
             <p className="font-mono text-xs break-all">{orderHash}</p>
           </div>
         </div>
@@ -84,7 +87,12 @@ export default function SuccessScreen({
               <p><strong>Amount:</strong> {tip.amount} {tip.token}</p>
               <p><strong>Ethereum Tx:</strong> {tip.txHash}</p>
               <p><strong>Stellar Address:</strong> {tip.stellarAddress.slice(0, 8)}...{tip.stellarAddress.slice(-8)}</p>
-              <p className="text-xs mt-1 opacity-75">USDC will arrive on Stellar network within 2-5 minutes</p>
+              <p className="text-xs mt-1 opacity-75">
+                {tip.token === 'USDC' 
+                  ? `${recipientToken} will arrive on Stellar network within 2-5 minutes`
+                  : 'Tokens will arrive on Stellar network within 2-5 minutes'
+                }
+              </p>
             </div>
           ))}
         </div>
