@@ -38,8 +38,6 @@ function createWeb3Connector(provider: ethers.BrowserProvider) {
 // Frontend Fusion+ client using MetaMask and backend APIs
 // This handles wallet interactions while keeping API calls on the backend
 
-import { ethers } from 'ethers';
-import { type Token } from './oneinch';
 
 // Check if chain supports Fusion+
 export function supportsFusionPlus(chainId: number): boolean {

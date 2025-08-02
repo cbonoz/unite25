@@ -572,7 +572,7 @@ export default function TipPage() {
           // If we have a transaction to execute
           if (bridgeResult.transaction && signer) {
             console.log('📝 Executing bridge transaction...');
-            
+
             const txResponse = await signer.sendTransaction({
               to: bridgeResult.transaction.to,
               value: bridgeResult.transaction.value || '0',
@@ -607,7 +607,8 @@ export default function TipPage() {
               txHash: bridgeResult.stellarTxId || 'bridge-initiated',
               stellarAddress: tipJarData.walletAddress,
               amount: tipAmount,
-              token: selectedToken.symbol
+              token: selectedToken.symbol,
+              stellarExplorer: bridgeResult.stellarExplorer
             }]);
 
             setTxStatus('success');

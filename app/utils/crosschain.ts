@@ -438,7 +438,7 @@ export async function createCrossChainOrderWithHashlock(
     return {
       hash: mockOrderHash,
       quoteId: mockQuoteId,
-      order: quote, // Return the quote as order for now
+      order: quote as any, // Return the quote as order for now
       hashLock,
       timelock,
       preset,

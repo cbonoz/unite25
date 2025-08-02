@@ -6,12 +6,14 @@ interface SuccessScreenProps {
     stellarTxId: string;
     amount: string;
     asset: string;
+    stellarExplorer?: string;
   }>;
   crossChainTips: Array<{
     txHash: string;
     stellarAddress: string;
     amount: string;
     token: string;
+    stellarExplorer?: string;
   }>;
   successMessage?: string;
   onSendAnother: () => void;
@@ -70,7 +72,20 @@ export default function SuccessScreen({
             <div key={index} className="text-sm text-purple-700 dark:text-purple-300">
               <p><strong>Amount:</strong> {tip.amount} {tip.asset}</p>
               <p><strong>Swap ID:</strong> {tip.swapId}</p>
-              <p><strong>Stellar Tx:</strong> {tip.stellarTxId}</p>
+              <p><strong>Stellar Tx:</strong>
+                {tip.stellarExplorer ? (
+                  <a
+                    href={tip.stellarExplorer}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="ml-1 text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-200 underline font-mono text-xs"
+                  >
+                    {tip.stellarTxId.slice(0, 8)}...{tip.stellarTxId.slice(-8)} ↗
+                  </a>
+                ) : (
+                  <span className="ml-1 font-mono text-xs">{tip.stellarTxId}</span>
+                )}
+              </p>
             </div>
           ))}
         </div>
@@ -85,7 +100,20 @@ export default function SuccessScreen({
           {crossChainTips.map((tip, index) => (
             <div key={index} className="text-sm text-blue-700 dark:text-blue-300">
               <p><strong>Amount:</strong> {tip.amount} {tip.token}</p>
-              <p><strong>Ethereum Tx:</strong> {tip.txHash}</p>
+              <p><strong>Stellar Transaction:</strong>
+                {tip.stellarExplorer ? (
+                  <a
+                    href={tip.stellarExplorer}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="ml-1 text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 underline font-mono text-xs"
+                  >
+                    {tip.txHash.slice(0, 8)}...{tip.txHash.slice(-8)} ↗
+                  </a>
+                ) : (
+                  <span className="ml-1 font-mono text-xs">{tip.txHash}</span>
+                )}
+              </p>
               <p><strong>Stellar Address:</strong> {tip.stellarAddress.slice(0, 8)}...{tip.stellarAddress.slice(-8)}</p>
               <p className="text-xs mt-1 opacity-75">
                 {tip.token === 'USDC'

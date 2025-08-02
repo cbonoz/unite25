@@ -26,8 +26,15 @@ export default function AppLayout({ children, className = '' }: AppLayoutProps) 
               <a href="https://github.com/cbonoz/unite25" className="hover:text-blue-400 transition-colors">GitHub</a>
             </div>
           </div>
-          <div className="border-t border-gray-700 mt-6 pt-6 text-center text-gray-400 text-sm">
-            <p>Powered by 1inch Fusion+ • Built for ETHGlobal Unite 2025</p>
+           <div className="border-t border-gray-700 mt-8 pt-8 text-center">
+            <div className="bg-yellow-900/30 border border-yellow-600/50 rounded-lg p-4 mb-4 max-w-2xl mx-auto">
+
+              <p className="text-gray-300 font-semibold mb-1">⚠ Hackathon Prototype</p>
+              <p className="text-gray-200 text-sm">
+                This is a prototype built for ETHGlobal Unite 2025.
+              </p>
+            </div>
+            <p className="text-gray-400">Powered by 1inch Fusion+ • Built for ETHGlobal Unite 2025</p>
           </div>
         </div>
       </footer>

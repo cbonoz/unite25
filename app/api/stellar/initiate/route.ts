@@ -38,7 +38,7 @@ console.log('🔧 Stellar Bridge Configuration:', {
   horizonUrl: HORIZON_URL,
   bridgeSecretKeyExists: !!BRIDGE_SECRET_KEY,
   bridgeSecretKeyLength: BRIDGE_SECRET_KEY?.length,
-  bridgeSecretKeyPreview: BRIDGE_SECRET_KEY ? `${BRIDGE_SECRET_KEY.substring(0, 4)}...${BRIDGE_SECRET_KEY.substring(-4)}` : 'MISSING',
+  bridgeSecretKeyPreview: BRIDGE_SECRET_KEY ? `${BRIDGE_SECRET_KEY.substring(0, 4)}...` : '',
   usdcIssuer: USDC_ISSUER,
   allEnvKeys: Object.keys(process.env).filter(key => key.includes('STELLAR')),
 });
@@ -58,7 +58,7 @@ export async function POST(request: Request) {
 
     // Validate inputs
     if (!ethereumTxHash || !sourceChain || !amount || !stellarRecipient) {
-      const missingFields = [];
+      const missingFields: string[] = [];
       if (!ethereumTxHash) missingFields.push('ethereumTxHash');
       if (!sourceChain) missingFields.push('sourceChain');
       if (!amount) missingFields.push('amount');

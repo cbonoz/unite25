@@ -142,15 +142,6 @@ export default function Home() {
               <a href="#" className="hover:text-blue-400 transition-colors">Support</a>
             </div>
           </div>
-          <div className="border-t border-gray-700 mt-8 pt-8 text-center">
-            <div className="bg-yellow-900/30 border border-yellow-600/50 rounded-lg p-4 mb-4 max-w-2xl mx-auto">
-              <p className="text-yellow-300 font-semibold mb-1">⚠️ Hackathon Prototype</p>
-              <p className="text-yellow-200 text-sm">
-                This is a prototype built for ETHGlobal Unite 2025. Not intended for production use.
-              </p>
-            </div>
-            <p className="text-gray-400">Powered by 1inch Fusion+ • Built for ETHGlobal Unite 2025</p>
-          </div>
         </div>
       </footer>
       </div> {/* Close content wrapper */}
