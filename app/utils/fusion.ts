@@ -47,56 +47,54 @@ export async function createFusionPlusOrder(
       throw new Error(`Fusion+ not supported on chain ${chainId}`);
     }
 
-    // Step 1: Get Fusion+ quote
-    const quoteParams = new URLSearchParams({
-      fromTokenAddress,
-      toTokenAddress,
-      amount,
-      walletAddress,
-      ...(receiverAddress && { receiver: receiverAddress }),
-      preset: 'fast',
-    });
+    // Step 1: Get Fusion+ quote via backend
 
-    console.log('📋 Getting Fusion+ quote...');
-    const quoteResponse = await fetch(`${BASE_URL}/fusion-plus/v1.0/${chainId}/quote?${quoteParams}`, {
-      method: 'GET',
+    console.log('📋 Getting Fusion+ quote via backend...');
+    const quoteResponse = await fetch('/api/fusion/quote', {
+      method: 'POST',
       headers: {
-        'Authorization': `Bearer ${API_KEY}`,
         'Content-Type': 'application/json',
       },
+      body: JSON.stringify({
+        chainId,
+        fromTokenAddress,
+        toTokenAddress,
+        amount,
+        walletAddress,
+        receiverAddress,
+      }),
     });
 
     if (!quoteResponse.ok) {
-      const errorData = await quoteResponse.text();
+      const errorData = await quoteResponse.json();
       console.error('❌ Fusion+ quote error:', quoteResponse.status, errorData);
-      throw new Error(`Fusion+ quote error: ${quoteResponse.status} ${errorData}`);
+      throw new Error(errorData.error || `Fusion+ quote error: ${quoteResponse.status}`);
     }
 
     const quote = await quoteResponse.json();
     console.log('✅ Fusion+ quote received');
 
-    // Step 2: Create order
-    console.log('🔄 Creating Fusion+ order...');
-    const orderResponse = await fetch(`${BASE_URL}/fusion-plus/v1.0/${chainId}/order`, {
+    // Step 2: Create order via backend
+    console.log('🔄 Creating Fusion+ order via backend...');
+    const orderResponse = await fetch('/api/fusion/order', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${API_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        fromTokenAddress,
-        toTokenAddress,
-        amount,
+        chainId,
+        srcToken: fromTokenAddress,
+        dstToken: toTokenAddress,
+        srcAmount: amount,
         walletAddress,
-        ...(receiverAddress && { receiver: receiverAddress }),
-        preset: 'fast',
+        receiverAddress,
       }),
     });
 
     if (!orderResponse.ok) {
-      const errorData = await orderResponse.text();
+      const errorData = await orderResponse.json();
       console.error('❌ Fusion+ order error:', orderResponse.status, errorData);
-      throw new Error(`Fusion+ order error: ${orderResponse.status} ${errorData}`);
+      throw new Error(errorData.error || `Fusion+ order error: ${orderResponse.status}`);
     }
 
     const order = await orderResponse.json();
@@ -142,30 +140,29 @@ export async function createRegularSwap(
       receiverAddress,
     });
 
-    const swapParams = new URLSearchParams({
-      src: fromTokenAddress,
-      dst: toTokenAddress,
-      amount,
-      from: walletAddress,
-      slippage: '1',
-      disableEstimate: 'false',
-      allowPartialFill: 'true',
-      ...(receiverAddress && { destReceiver: receiverAddress }),
-    });
+    // Use backend API route instead of direct 1inch API call (avoids CORS)
 
-    console.log('� Getting swap transaction...');
-    const swapResponse = await fetch(`${BASE_URL}/swap/v6.0/${chainId}/swap?${swapParams}`, {
-      method: 'GET',
+    console.log('🔄 Getting swap transaction via backend...');
+    const swapResponse = await fetch('/api/swap', {
+      method: 'POST',
       headers: {
-        'Authorization': `Bearer ${API_KEY}`,
         'Content-Type': 'application/json',
       },
+      body: JSON.stringify({
+        chainId,
+        fromTokenAddress,
+        toTokenAddress,
+        amount,
+        walletAddress,
+        receiverAddress,
+        slippage: '1',
+      }),
     });
 
     if (!swapResponse.ok) {
-      const errorData = await swapResponse.text();
-      console.error('❌ Swap API error:', swapResponse.status, errorData);
-      throw new Error(`Swap API error: ${swapResponse.status} ${errorData}`);
+      const errorData = await swapResponse.json();
+      console.error('❌ Backend swap API error:', swapResponse.status, errorData);
+      throw new Error(errorData.error || `Swap API error: ${swapResponse.status}`);
     }
 
     const swapData = await swapResponse.json();
@@ -173,10 +170,11 @@ export async function createRegularSwap(
 
     return {
       success: true,
-      transaction: swapData.tx,
+      transaction: swapData.transaction,
       toAmount: swapData.toAmount,
-      estimatedGas: swapData.tx?.gas,
-      orderHash: `regular_swap_${Date.now()}`,
+      estimatedGas: swapData.estimatedGas,
+      orderHash: swapData.orderHash,
+      method: 'regular-swap',
     };
 
   } catch (error) {

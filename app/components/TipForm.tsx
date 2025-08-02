@@ -1,5 +1,7 @@
 import TokenAutocomplete from './TokenAutocomplete';
+import QuoteDisplay from './QuoteDisplay';
 import { type Token } from '../utils/oneinch';
+import { siteConfig } from '../siteConfig';
 
 interface TipFormProps {
   availableTokens: Token[];
@@ -104,11 +106,15 @@ export default function TipForm({
             {selectedToken?.symbol}
           </div>
         </div>
-        {usdValue > 0 && (
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            ≈ ${usdValue.toFixed(2)} USD
-          </p>
-        )}
+
+        {/* Live 1inch Quote */}
+        <QuoteDisplay
+          selectedToken={selectedToken}
+          recipientToken={recipientToken}
+          tipAmount={tipAmount}
+          chainId={typeof selectedChain === 'number' ? selectedChain : 1}
+          availableTokens={availableTokens}
+        />
       </div>
 
       {/* Error Message */}
@@ -138,7 +144,7 @@ export default function TipForm({
           ? 'Switch Network Required'
           : txStatus === 'pending' || isProcessing
           ? 'Creating Fusion+ Order...'
-          : 'Send Tip via Fusion+'
+          : siteConfig.sendPaymentButtonText || 'Send Payment via Fusion+'
         }
       </button>
 

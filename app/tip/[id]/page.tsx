@@ -10,6 +10,7 @@ import TipForm from '../../components/TipForm';
 import SuccessScreen from '../../components/SuccessScreen';
 import ErrorScreen from '../../components/ErrorScreen';
 import { useWallet } from '../../hooks/useWallet';
+import { useFusionSwap } from '../../hooks/useFusionSwap';
 import { retrieveTipJarConfig, isValidCID } from '@/app/utils/storage';
 import {
   getPopularTokens,
@@ -60,6 +61,16 @@ export default function TipPage() {
     signer
   } = useWallet();
 
+  // Fusion+ hook for swaps
+  const {
+    isInitialized: isFusionReady,
+    isLoading: isFusionLoading,
+    error: fusionError,
+    executeETHToUSDC,
+    executeSwap,
+    supportsFusionPlus,
+  } = useFusionSwap();
+
   // State
   const [tipJarData, setTipJarData] = useState<TipJarData | null>(null);
   const [selectedChain, setSelectedChain] = useState<ChainId>(SUPPORTED_CHAINS.ETHEREUM);
@@ -68,7 +79,7 @@ export default function TipPage() {
   const [tokenSearchQuery, setTokenSearchQuery] = useState('');
   const [tipAmount, setTipAmount] = useState('');
   const [usdValue, setUsdValue] = useState<number>(0);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true); // Start as true since we need to load tip jar data
   const [isLoadingTokens, setIsLoadingTokens] = useState(true);
   const [txStatus, setTxStatus] = useState<'idle' | 'pending' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
@@ -81,7 +92,10 @@ export default function TipPage() {
   // Load tip jar data from Storacha using CID
   useEffect(() => {
     const loadTipJarData = async () => {
-      if (!tipJarId) return;
+      if (!tipJarId) {
+        setIsLoading(false);
+        return;
+      }
 
       try {
         setIsLoading(true);
@@ -208,6 +222,15 @@ export default function TipPage() {
         try {
           const price = await getTokenPrice(selectedChain, selectedToken.address);
           const value = parseFloat(tipAmount) * price;
+
+          console.log('💰 USD value calculation:', {
+            tipAmount,
+            tokenSymbol: selectedToken.symbol,
+            tokenAddress: selectedToken.address,
+            priceFromAPI: price,
+            calculatedValue: value
+          });
+
           setUsdValue(value);
         } catch (error) {
           console.error('Error calculating USD value:', error);
@@ -458,7 +481,7 @@ export default function TipPage() {
     );
   }
 
-  if (errorMessage) {
+  if (errorMessage && errorType === 'tipjar') {
     return (
       <AppLayout>
         <ErrorScreen
@@ -471,7 +494,7 @@ export default function TipPage() {
     );
   }
 
-  if (!tipJarData) {
+  if (!tipJarData && !isLoading) {
     return (
       <AppLayout>
         <div className="max-w-2xl mx-auto text-center">
@@ -482,6 +505,27 @@ export default function TipPage() {
           <p className="text-gray-600 dark:text-gray-300">
             Unable to load tip jar configuration
           </p>
+        </div>
+      </AppLayout>
+    );
+  }
+
+  // Show transaction error overlay if it's a transaction error (not tipjar error)
+  if (errorMessage && errorType === 'transaction') {
+    // Continue to render the form but show error in the TipForm component
+  }
+
+  // Don't render main content if we don't have tipJarData yet
+  if (!tipJarData) {
+    return (
+      <AppLayout>
+        <div className="max-w-2xl mx-auto text-center">
+          <div className="animate-pulse">
+            <div className="h-8 bg-gray-300 rounded mb-4"></div>
+            <div className="h-4 bg-gray-300 rounded mb-2"></div>
+            <div className="h-4 bg-gray-300 rounded"></div>
+          </div>
+          <p className="mt-4 text-gray-600">Loading...</p>
         </div>
       </AppLayout>
     );

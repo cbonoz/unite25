@@ -43,11 +43,11 @@ const CreatePage = () => {
 
   const chainOptions = [
     { id: SUPPORTED_CHAINS.ETHEREUM, name: 'Ethereum', color: 'bg-blue-500' },
-    { id: SUPPORTED_CHAINS.BASE, name: 'Base', color: 'bg-blue-600' },
-    { id: SUPPORTED_CHAINS.OPTIMISM, name: 'Optimism', color: 'bg-red-500' },
+    // { id: SUPPORTED_CHAINS.BASE, name: 'Base', color: 'bg-blue-300' },
+    // { id: SUPPORTED_CHAINS.OPTIMISM, name: 'Optimism', color: 'bg-red-500' },
     { id: SUPPORTED_CHAINS.POLYGON, name: 'Polygon', color: 'bg-purple-500' },
-    { id: SUPPORTED_CHAINS.ARBITRUM, name: 'Arbitrum', color: 'bg-blue-400' },
-    { id: 'stellar' as ChainId, name: 'Stellar', color: 'bg-indigo-500' },
+    // { id: SUPPORTED_CHAINS.ARBITRUM, name: 'Arbitrum', color: 'bg-blue-400' },
+    { id: 'stellar' as ChainId, name: 'Stellar', color: 'bg-red-500' },
   ];
 
   const validateForm = () => {

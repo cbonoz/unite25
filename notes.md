@@ -15,6 +15,8 @@ Demo url: https://swapjar.vercel.app
 
 Demo video:
 
+Example transaction through SwapJar from ETH sender to USDC recipient mainnet: https://etherscan.io/tx/0xf5dcfbaa5709c811848bd922f506682db77204902e8390d7cf415ff34e44fd0b
+
 <!-- Script
 
 
