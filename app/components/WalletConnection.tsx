@@ -4,6 +4,7 @@ interface WalletConnectionProps {
   address?: string;
   selectedChain: number | string;
   shouldShowSwitchNetwork: boolean;
+  walletChainId?: number;
   onConnect: () => void;
   onSwitchNetwork: (chainId: number) => void;
 }

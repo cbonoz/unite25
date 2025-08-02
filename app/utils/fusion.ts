@@ -1,6 +1,8 @@
 // Fusion+ API Integration for better cross-chain swaps
 // Using direct API calls for more reliable implementation
 
+import { NetworkEnum } from '@1inch/fusion-sdk';
+
 const API_KEY = process.env.NEXT_PUBLIC_ONE_INCH_API_KEY;
 const BASE_URL = 'https://api.1inch.dev';
 
@@ -304,3 +306,6 @@ export async function initiateStellarBridge(
     throw error;
   }
 }
+
+
+NetworkEnum.GNOSIS
