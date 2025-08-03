@@ -108,7 +108,6 @@ export default function TipJarSuccess({ tipJarId, tipJarData, onCreateAnother }:
                 <li>• Accept tips from {tipJarData.chains.length}+ blockchain{tipJarData.chains.length !== 1 ? 's' : ''}</li>
                 <li>• Auto-swap to {tipJarData.recipientToken}</li>
                 <li>• Gas fees covered by Fusion+</li>
-                <li>• Real-time notifications</li>
                 <li>• Powered by 1inch Fusion+</li>
               </ul>
             </div>

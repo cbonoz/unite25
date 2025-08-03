@@ -235,7 +235,7 @@ const CreatePage = () => {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Receive Donations In
+                      Receive payments in
                     </label>
                     <select
                       value={formData.recipientToken}
@@ -418,9 +418,8 @@ const CreatePage = () => {
                   <ul className="text-sm text-blue-700 dark:text-blue-300 space-y-1">
                     <li>• Accept payments from {formData.selectedChains.length}+ blockchain{formData.selectedChains.length !== 1 ? 's' : ''}</li>
                     <li>• Auto-convert to {formData.recipientToken}</li>
-                    <li>• Gas fees covered by Fusion+</li>
-                    <li>• Real-time notifications</li>
-                    <li>• Powered by 1inch Fusion+</li>
+                    <li>• Deposit in your provided wallet address</li>
+                    <li>• Have swap gas fees covered by Fusion+</li>
                   </ul>
                 </div>
               </div>
