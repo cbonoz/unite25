@@ -17,17 +17,27 @@ export default function Header() {
           </Link>
 
           <div className="hidden md:flex items-center space-x-8">
+
             <Link
+              href="/create"
+              className="text-gray-600 hover:text-gray-800 dark:text-gray-300 dark:hover:text-white transition-colors"
+            >
+              Create
+            </Link>
+                <Link
               href="/about"
               className="text-gray-600 hover:text-gray-800 dark:text-gray-300 dark:hover:text-white transition-colors"
             >
               About
             </Link>
             <Link
-              href="/create"
+              href={siteConfig.youtubeUrl}
+              target="_blank"
+              rel="noopener noreferrer"
               className="text-gray-600 hover:text-gray-800 dark:text-gray-300 dark:hover:text-white transition-colors"
+
             >
-              Create
+              View Demo
             </Link>
           </div>
 
@@ -41,14 +51,6 @@ export default function Header() {
               </Link>
             ) : (
               <>
-                <a
-                  href={siteConfig.youtubeUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="hidden sm:block px-4 py-2 text-gray-600 hover:text-gray-800 dark:text-gray-300 dark:hover:text-white transition-colors"
-                >
-                  View Demo
-                </a>
                 <Link
                   href="/create"
                   className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"

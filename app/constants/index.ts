@@ -61,6 +61,57 @@ export function getStablecoinAddress(chainId: ChainId, stablecoin: 'USDC' | 'DAI
   return STABLECOIN_ADDRESSES[chainId][stablecoin];
 }
 
+// Helper function to get Fusion+ order details URL
+export function getFusionOrderUrl(orderHash: string, chainId?: ChainId): string {
+  // 1inch Fusion+ explorer URLs for different networks
+  const baseUrls: Record<string, string> = {
+    [SUPPORTED_CHAINS.ETHEREUM]: 'https://fusion.1inch.io/orders',
+    [SUPPORTED_CHAINS.BASE]: 'https://fusion.1inch.io/orders',
+    [SUPPORTED_CHAINS.POLYGON]: 'https://fusion.1inch.io/orders',
+    [SUPPORTED_CHAINS.ARBITRUM]: 'https://fusion.1inch.io/orders',
+    [SUPPORTED_CHAINS.OPTIMISM]: 'https://fusion.1inch.io/orders',
+  };
+
+  const baseUrl = chainId ? baseUrls[chainId] || baseUrls[SUPPORTED_CHAINS.ETHEREUM] : baseUrls[SUPPORTED_CHAINS.ETHEREUM];
+  return `${baseUrl}/${orderHash}`;
+}
+
+// Helper function to get transaction URL on block explorer
+export function getTransactionUrl(txHash: string, chainId: ChainId): string {
+  const explorerUrls: Record<string, string> = {
+    [SUPPORTED_CHAINS.ETHEREUM]: 'https://etherscan.io/tx',
+    [SUPPORTED_CHAINS.BASE]: 'https://basescan.org/tx',
+    [SUPPORTED_CHAINS.POLYGON]: 'https://polygonscan.com/tx',
+    [SUPPORTED_CHAINS.ARBITRUM]: 'https://arbiscan.io/tx',
+    [SUPPORTED_CHAINS.OPTIMISM]: 'https://optimistic.etherscan.io/tx',
+    [SUPPORTED_CHAINS.STELLAR]: 'https://stellar.expert/explorer/public/tx',
+  };
+
+  const baseUrl = explorerUrls[chainId] || explorerUrls[SUPPORTED_CHAINS.ETHEREUM];
+  return `${baseUrl}/${txHash}`;
+}
+
+// Helper function to get address URL on block explorer
+export function getAddressUrl(address: string, chainId: ChainId): string {
+  const explorerUrls: Record<string, string> = {
+    [SUPPORTED_CHAINS.ETHEREUM]: 'https://etherscan.io/address',
+    [SUPPORTED_CHAINS.BASE]: 'https://basescan.org/address',
+    [SUPPORTED_CHAINS.POLYGON]: 'https://polygonscan.com/address',
+    [SUPPORTED_CHAINS.ARBITRUM]: 'https://arbiscan.io/address',
+    [SUPPORTED_CHAINS.OPTIMISM]: 'https://optimistic.etherscan.io/address',
+    [SUPPORTED_CHAINS.STELLAR]: 'https://stellar.expert/explorer/public/account',
+  };
+
+  const baseUrl = explorerUrls[chainId] || explorerUrls[SUPPORTED_CHAINS.ETHEREUM];
+  return `${baseUrl}/${address}`;
+}
+
+// Helper function to format order hash for display
+export function formatOrderHash(orderHash: string, length: number = 8): string {
+  if (orderHash.length <= length * 2) return orderHash;
+  return `${orderHash.slice(0, length)}...${orderHash.slice(-length)}`;
+}
+
 // Fallback tokens in case API fails
 export function getFallbackTokens(chainId: ChainId): Token[] {
   if (chainId === SUPPORTED_CHAINS.ETHEREUM) {

@@ -120,42 +120,14 @@ function QuoteDisplayContent({
           console.log(`✅ Found ${recipientToken} token with ${foundToken.decimals} decimals from API:`, foundToken);
           setDecimals(foundToken.decimals);
         } else {
-          console.log(`⚠️ Token ${recipientToken} not found in API response, using fallback decimals`);
-          // Fallback to standard decimals
-          switch (recipientToken) {
-            case 'USDC':
-            case 'USDT':
-              setDecimals(6);
-              break;
-            case 'DAI':
-            case 'ETH':
-              setDecimals(18);
-              break;
-            case 'XLM':
-              setDecimals(7);
-              break;
-            default:
-              setDecimals(18);
-          }
+          console.log(`❌ Token ${recipientToken} not found in API response - cannot show accurate quote`);
+          // Don't set decimals, which will cause the component to show "No quote available"
+          setDecimals(-1); // Use -1 as a flag for "no valid data"
         }
       } catch (error) {
         console.error('❌ Error fetching token decimals from API:', error);
-        // Fallback to standard decimals
-        switch (recipientToken) {
-          case 'USDC':
-          case 'USDT':
-            setDecimals(6);
-            break;
-          case 'DAI':
-          case 'ETH':
-            setDecimals(18);
-            break;
-          case 'XLM':
-            setDecimals(7);
-            break;
-          default:
-            setDecimals(18);
-        }
+        console.log('❌ Cannot verify token data - refusing to show potentially incorrect quote');
+        setDecimals(-1); // Use -1 as a flag for "no valid data"
       } finally {
         setLoading(false);
       }
@@ -168,6 +140,15 @@ function QuoteDisplayContent({
     return (
       <div className="text-green-600 dark:text-green-400 text-sm">
         Loading quote details...
+      </div>
+    );
+  }
+
+  // If we couldn't get valid token data, don't show a quote
+  if (decimals === -1) {
+    return (
+      <div className="text-gray-500 dark:text-gray-400 text-sm">
+        📊 No quote available - token data could not be verified
       </div>
     );
   }
@@ -263,43 +244,13 @@ export default function QuoteDisplay({
         return foundToken.address;
       }
 
-      console.log(`⚠️ Token ${recipientToken} not found in API response, using fallback`);
+      console.log(`❌ Token ${recipientToken} not found in API response - refusing to show quote with incorrect data`);
+      return null; // Return null instead of fallback to avoid showing incorrect rates
     } catch (error) {
       console.error('❌ Error fetching tokens from API:', error);
-      console.log('⚠️ Falling back to hardcoded addresses');
+      console.log('❌ Refusing to show quote without verified token data');
+      return null; // Return null instead of fallback to avoid showing incorrect rates
     }
-
-    // Fallback to hardcoded addresses as last resort
-    if (chainId === 1) {
-      // Ethereum Mainnet
-      const tokens = COMMON_TOKEN_ADDRESSES[1];
-      switch (recipientToken) {
-        case 'USDC': return tokens.USDC;
-        case 'DAI': return tokens.DAI;
-        case 'USDT': return tokens.USDT;
-        default: return tokens.USDC;
-      }
-    } else if (chainId === 8453) {
-      // Base
-      const tokens = COMMON_TOKEN_ADDRESSES[8453];
-      switch (recipientToken) {
-        case 'USDC': return tokens.USDC;
-        case 'DAI': return tokens.DAI;
-        case 'USDT': return tokens.USDC; // Fallback to USDC
-        default: return tokens.USDC;
-      }
-    } else if (chainId === 137) {
-      // Polygon
-      const tokens = COMMON_TOKEN_ADDRESSES[137];
-      switch (recipientToken) {
-        case 'USDC': return tokens.USDC;
-        case 'DAI': return tokens.DAI;
-        case 'USDT': return tokens.USDT;
-        default: return tokens.USDC;
-      }
-    }
-
-    return null; // Unsupported chain
   };
 
   // Format cross-chain amount display
@@ -314,76 +265,6 @@ export default function QuoteDisplay({
       // Generic formatting
       const amount = parseFloat(crossChainQuote.dstAmount) / Math.pow(10, 18);
       return amount.toFixed(4);
-    }
-  };
-
-  // Get proper decimals for destination token
-  const getDestinationTokenDecimals = async (recipientToken: string): Promise<number> => {
-    console.log('🔢 Getting decimals for recipient token:', recipientToken);
-
-    // For cross-chain scenarios, use standard decimals
-    if (recipientToken === 'XLM') return 7; // XLM has 7 decimal places
-    if (recipientToken === 'STELLAR_USDC') return 6; // USDC typically has 6 decimal places
-
-    try {
-      // Fetch all tokens for this chain from 1inch API
-      const chainTokens = await getPopularTokens(chainId as any);
-
-      // Try to find the token in the API response and use its decimals
-      // Prioritize exact symbol matches to avoid confusion with derivative tokens
-      let foundToken: Token | undefined;
-
-      switch (recipientToken) {
-        case 'USDC':
-          foundToken = chainTokens.find((token: Token) =>
-            token.symbol === 'USDC'
-          );
-          break;
-
-        case 'DAI':
-          // Look for exact DAI match first, avoid compound tokens like cDAI
-          foundToken = chainTokens.find((token: Token) =>
-            token.symbol === 'DAI' && !token.name?.toLowerCase().includes('compound')
-          );
-          break;
-
-        case 'USDT':
-          foundToken = chainTokens.find((token: Token) =>
-            token.symbol === 'USDT'
-          );
-          break;
-
-        case 'ETH':
-          foundToken = chainTokens.find((token: Token) =>
-            token.symbol === 'ETH' || token.symbol === 'WETH'
-          );
-          break;
-      }
-
-      if (foundToken?.decimals !== undefined) {
-        console.log(`✅ Found ${recipientToken} token with ${foundToken.decimals} decimals from API:`, foundToken);
-        return foundToken.decimals;
-      }
-
-      console.log(`⚠️ Token ${recipientToken} not found in API response, using fallback decimals`);
-    } catch (error) {
-      console.error('❌ Error fetching token decimals from API:', error);
-      console.log('⚠️ Falling back to standard decimals');
-    }
-
-    console.log(`⚠️ Using fallback decimals for ${recipientToken}`);
-    // Fallback to standard decimals
-    switch (recipientToken) {
-      case 'USDC':
-      case 'USDT':
-        return 6;
-      case 'DAI':
-      case 'ETH':
-        return 18;
-      case 'XLM':
-        return 7;
-      default:
-        return 18; // Default to 18 decimals
     }
   };
 
@@ -461,8 +342,9 @@ export default function QuoteDisplay({
         });
 
         if (!dstTokenAddress) {
-          console.error('❌ Destination token not supported:', recipientToken, 'on chain', chainId);
+          console.error('❌ Destination token not supported or could not be verified:', recipientToken, 'on chain', chainId);
           setError(null); // Don't show error in UI
+          setQuote(null); // Clear any existing quote
           return;
         }
 

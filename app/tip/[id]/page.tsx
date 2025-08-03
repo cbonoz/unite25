@@ -93,6 +93,7 @@ export default function TipPage() {
   const [stellarTips, setStellarTips] = useState<StellarTipResult[]>([]);
   const [crossChainTips, setCrossChainTips] = useState<CrossChainTipResult[]>([]);
   const [orderHash, setOrderHash] = useState<string>('');
+  const [transactionMethod, setTransactionMethod] = useState<string>('');
   const [isProcessing, setIsProcessing] = useState(false);
 
   // New state for USDC balance feature
@@ -173,8 +174,9 @@ export default function TipPage() {
         return; // Wait for tip jar data to load first
       }
 
-      // Skip token loading for Stellar - handle via StellarWallet component
+      // Skip token loading for Stellar and other unsupported chains
       if (selectedChain === 'stellar') {
+        console.log('🌟 Stellar chain selected - using base tokens instead of API');
         setAvailableTokens([]);
         setSelectedToken(null);
         setTokenSearchQuery('');
@@ -417,6 +419,7 @@ export default function TipPage() {
 
         console.log('✅ Direct USDC transfer completed:', receipt.hash);
         setOrderHash(receipt.hash);
+        setTransactionMethod('ethereum-tx');
       }
 
       setTxStatus('success');
@@ -585,6 +588,7 @@ export default function TipPage() {
 
             console.log('✅ Bridge transaction confirmed:', receipt.hash);
             setOrderHash(receipt.hash);
+            setTransactionMethod('ethereum-tx');
 
             // Update state with successful bridge
             setCrossChainTips(prev => [...prev, {
@@ -599,6 +603,7 @@ export default function TipPage() {
           } else {
             // Handle simulation or direct bridge result
             setOrderHash(bridgeResult.stellarTxId || 'bridge-initiated');
+            setTransactionMethod('stellar-bridge');
             setCrossChainTips(prev => [...prev, {
               txHash: bridgeResult.stellarTxId || 'bridge-initiated',
               stellarAddress: tipJarData.walletAddress,
@@ -675,6 +680,10 @@ export default function TipPage() {
       console.log('⏳ Transaction sent, waiting for confirmation...', txResponse.hash);
       setOrderHash(txResponse.hash);
 
+      // Determine transaction method based on swapOrder method
+      const method = swapOrder.method || 'unknown';
+      setTransactionMethod(method === 'fusion-plus' ? 'fusion-plus' : 'ethereum-tx');
+
       // Wait for transaction confirmation
       const receipt = await txResponse.wait();
 
@@ -733,6 +742,7 @@ export default function TipPage() {
 
             // Add to order hash for tracking
             setOrderHash(receipt.hash);
+            setTransactionMethod('ethereum-tx');
           } catch (bridgeError) {
             console.error('❌ EVM bridge failed:', bridgeError);
             setTxStatus('success');
@@ -742,6 +752,7 @@ export default function TipPage() {
           // Same-chain transaction, just show success
           setTxStatus('success');
           setOrderHash(receipt.hash);
+          setTransactionMethod('ethereum-tx');
         }
       } else {
         throw new Error('Transaction failed');
@@ -781,6 +792,7 @@ export default function TipPage() {
     setTipAmount('');
     setUsdValue(0);
     setOrderHash('');
+    setTransactionMethod('');
     setStellarTips([]);
     setCrossChainTips([]);
     setIsProcessing(false);
@@ -886,6 +898,7 @@ export default function TipPage() {
           recipientToken={tipJarData.recipientToken}
           walletAddress={tipJarData.walletAddress}
           customMessage={tipJarData.customMessage}
+          supportedChains={tipJarData.chains}
         />
 
         {/* Tip Form */}
@@ -896,6 +909,8 @@ export default function TipPage() {
             <SuccessScreen
               recipientToken={tipJarData.recipientToken}
               orderHash={orderHash}
+              chainId={selectedChain}
+              transactionMethod={transactionMethod}
               stellarTips={stellarTips}
               crossChainTips={crossChainTips}
               successMessage={tipJarData.successMessage}
