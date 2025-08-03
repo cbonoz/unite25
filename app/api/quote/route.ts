@@ -5,6 +5,11 @@ const API_KEY = process.env.ONE_INCH_API_KEY;
 
 export async function GET(request: NextRequest) {
   try {
+    // Check if API key is configured
+    if (!API_KEY) {
+      console.warn('⚠️  ONE_INCH_API_KEY not configured, will try without API key (may have rate limits)');
+    }
+
     const { searchParams } = new URL(request.url);
     const chainId = searchParams.get('chainId');
     const src = searchParams.get('src');
@@ -24,6 +29,7 @@ export async function GET(request: NextRequest) {
       src,
       dst,
       amount,
+      apiKeyPresent: !!API_KEY,
       srcFormatted: src === '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE' ? 'ETH' : src,
       dstFormatted: dst
     });
@@ -31,24 +37,45 @@ export async function GET(request: NextRequest) {
     // Make request to 1inch API from server-side (no CORS issues)
     const quoteUrl = `${ONEINCH_AGGREGATION_API}/${chainId}/quote?src=${src}&dst=${dst}&amount=${amount}`;
 
+    const headers: Record<string, string> = {
+      'Accept': 'application/json',
+      'User-Agent': 'SwapJar/1.0'
+    };
+
+    // Add API key if available - 1inch uses Authorization header
+    if (API_KEY) {
+      headers['Authorization'] = `Bearer ${API_KEY}`;
+    }
+
     const response = await fetch(quoteUrl, {
       method: 'GET',
-      headers: {
-                'Authorization': `Bearer ${API_KEY}`,
-        'Accept': 'application/json',
-        'User-Agent': 'SwapJar/1.0'
-      }
+      headers
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('❌ 1inch API error:', response.status, errorText);
+      console.error('❌ 1inch API error:', {
+        status: response.status,
+        statusText: response.statusText,
+        errorText,
+        url: quoteUrl,
+        apiKeyPresent: !!API_KEY
+      });
+
+      // Try to parse error response for better error messages
+      let errorDetails = errorText;
+      try {
+        const errorJson = JSON.parse(errorText);
+        errorDetails = errorJson.description || errorJson.error || errorText;
+      } catch (e) {
+        // Keep original error text if not JSON
+      }
 
       return NextResponse.json(
         {
           error: `1inch API Error: ${response.status}`,
-          description: errorText,
-          details: { chainId, src, dst, amount }
+          description: errorDetails,
+          details: { chainId, src, dst, amount, needsApiKey: !API_KEY }
         },
         { status: response.status }
       );

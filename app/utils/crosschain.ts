@@ -200,6 +200,8 @@ async function getEthereumToStellarQuote(
         throw new Error(`USDC not available on chain ${srcChainId}`);
       }
 
+      console.log(`🔍 Using USDC address for chain ${srcChainId}: ${usdcAddress}`);
+
       // Get quote for 1 ETH → USDC
       const oneEthInWei = '1000000000000000000'; // 1 ETH in wei
       console.log(`🔍 Getting ETH → USDC quote on chain ${srcChainId}...`);
@@ -211,7 +213,10 @@ async function getEthereumToStellarQuote(
         oneEthInWei
       );
 
+      console.log('🔍 1inch quote response:', quote);
+
       if ('error' in quote) {
+        console.error('❌ 1inch quote error details:', quote);
         throw new Error(`1inch quote error: ${quote.error}`);
       }
 
@@ -221,10 +226,27 @@ async function getEthereumToStellarQuote(
 
     } catch (error) {
       console.error('❌ Failed to get ETH → USDC rate from 1inch:', error);
-      return {
-        error: 'Unable to get ETH to USDC conversion rate',
-        description: 'Could not fetch current ETH to USDC rate from 1inch API'
-      };
+
+      try {
+        // Try fallback price API using CoinGecko
+        console.log('🔄 Trying fallback price feed...');
+        const fallbackResponse = await fetch('/api/price/fallback?from=ethereum&to=usd-coin');
+
+        if (fallbackResponse.ok) {
+          const fallbackData = await fallbackResponse.json();
+          ethToUsdcRate = fallbackData.rate;
+          console.log(`📊 Fallback ETH → USDC rate: ${ethToUsdcRate}`);
+        } else {
+          throw new Error('Fallback price API also failed');
+        }
+      } catch (fallbackError) {
+        console.error('❌ Fallback price API also failed:', fallbackError);
+
+        // Use a hardcoded fallback rate as last resort
+        const hardcodedFallbackRate = 3200; // ~$3200 per ETH (update periodically)
+        console.log(`⚠️  Using hardcoded fallback ETH → USDC rate: ${hardcodedFallbackRate}`);
+        ethToUsdcRate = hardcodedFallbackRate;
+      }
     }
 
     // Step 2: Handle Stellar USDC (1:1 with USDC) or XLM conversion
@@ -314,11 +336,36 @@ async function getStellarXLMToUSDCRate(): Promise<number> {
     // USDC on Stellar: GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5
     const usdcAsset = 'GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5';
 
-    // Query Stellar Horizon API for orderbook
-    const horizonUrl = 'https://horizon.stellar.org';
-    const orderbookUrl = `${horizonUrl}/order_book?selling_asset_type=native&buying_asset_type=credit_alphanum4&buying_asset_code=USDC&buying_asset_issuer=${usdcAsset}`;
-
     console.log('🔍 Fetching XLM/USDC rate from Stellar Horizon API...');
+
+    // Try multiple approaches to get the rate
+
+    // Approach 1: Use Stellar's native asset trading pairs API
+    const horizonUrl = 'https://horizon.stellar.org';
+    const tradingPairsUrl = `${horizonUrl}/trade_aggregations?base_asset_type=native&counter_asset_type=credit_alphanum4&counter_asset_code=USDC&counter_asset_issuer=${usdcAsset}&resolution=3600000&limit=1&order=desc`;
+
+    try {
+      const tradesResponse = await fetch(tradingPairsUrl);
+      if (tradesResponse.ok) {
+        const tradesData = await tradesResponse.json();
+        const records = tradesData._embedded?.records || [];
+
+        if (records.length > 0) {
+          const latestTrade = records[0];
+          const rate = parseFloat(latestTrade.avg);
+          console.log(`✅ XLM/USDC rate from Stellar trades: ${rate}`);
+
+          if (rate > 0 && rate < 1) { // Sanity check: XLM should be less than $1
+            return rate;
+          }
+        }
+      }
+    } catch (tradeError) {
+      console.log('⚠️ Trade aggregations failed, trying orderbook...');
+    }
+
+    // Approach 2: Use orderbook if trades fail
+    const orderbookUrl = `${horizonUrl}/order_book?selling_asset_type=native&buying_asset_type=credit_alphanum4&buying_asset_code=USDC&buying_asset_issuer=${usdcAsset}`;
 
     const response = await fetch(orderbookUrl);
     if (!response.ok) {
@@ -326,26 +373,57 @@ async function getStellarXLMToUSDCRate(): Promise<number> {
     }
 
     const data = await response.json();
+    console.log('📊 Stellar orderbook data:', JSON.stringify(data, null, 2));
 
     // Get the best bid price (what buyers are willing to pay for XLM in USDC)
     const bids = data.bids || [];
-    if (bids.length === 0) {
-      throw new Error('No bids available in XLM/USDC orderbook');
+    const asks = data.asks || [];
+
+    if (bids.length > 0) {
+      const bestBid = parseFloat(bids[0].price);
+      console.log(`✅ Best bid XLM/USDC rate from Stellar: ${bestBid}`);
+
+      if (bestBid > 0 && bestBid < 1) { // Sanity check
+        return bestBid;
+      }
     }
 
-    // Use the highest bid as the current rate
-    const bestBid = parseFloat(bids[0].price);
-    console.log(`✅ Current XLM/USDC rate from Stellar: ${bestBid}`);
+    if (asks.length > 0) {
+      const bestAsk = parseFloat(asks[0].price);
+      console.log(`✅ Best ask XLM/USDC rate from Stellar: ${bestAsk}`);
 
-    return bestBid;
+      if (bestAsk > 0 && bestAsk < 1) { // Sanity check
+        return bestAsk;
+      }
+    }
+
+    throw new Error('No valid rates found in orderbook');
 
   } catch (error) {
     console.error('❌ Error fetching XLM/USDC rate from Stellar:', error);
 
-    // Fallback to a reasonable estimate if API fails
-    // XLM typically trades around $0.10-0.15, USDC is $1.00
-    const fallbackRate = 0.12; // $0.12 per XLM
-    console.log(`⚠️ Using fallback XLM/USDC rate: ${fallbackRate}`);
+    try {
+      // Fallback: Use our price API to get XLM/USDC rate
+      console.log('🔄 Trying fallback price API for XLM/USDC...');
+      const fallbackResponse = await fetch('/api/price/fallback?from=stellar&to=usd-coin');
+
+      if (fallbackResponse.ok) {
+        const fallbackData = await fallbackResponse.json();
+        const rate = fallbackData.rate;
+        console.log(`📊 Fallback XLM/USDC rate: ${rate}`);
+
+        if (rate > 0 && rate < 1) { // Sanity check
+          return rate;
+        }
+      }
+    } catch (fallbackError) {
+      console.error('❌ Fallback price API also failed:', fallbackError);
+    }
+
+    // Last resort: Use a recent market rate
+    // XLM has been trading around $0.09-0.15 range in 2024/2025
+    const fallbackRate = 0.095; // Conservative estimate
+    console.log(`⚠️ Using conservative fallback XLM/USDC rate: ${fallbackRate}`);
 
     return fallbackRate;
   }

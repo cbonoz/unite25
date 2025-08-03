@@ -34,7 +34,7 @@ export interface Token {
 // Stablecoin addresses across different chains
 export const STABLECOIN_ADDRESSES: Record<ChainId, Record<string, string>> = {
   [SUPPORTED_CHAINS.ETHEREUM]: {
-    USDC: '0xA0b86a33E6441C8C7b60b8B5fa46a80C42a59C5d',
+    USDC: '0xA0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
     DAI: '0x6B175474E89094C44Da98b954EedeAC495271d0F',
     USDT: '0xdAC17F958D2ee523a2206206994597C13D831ec7',
   },
@@ -169,11 +169,11 @@ export const ETHEREUM_FALLBACK_TOKENS: Token[] = [
     logoURI: 'https://tokens.1inch.io/0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee.png',
   },
   {
-    address: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
+    address: '0xA0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
     symbol: 'USDC',
     name: 'USD Coin',
     decimals: 6,
-    logoURI: 'https://tokens.1inch.io/0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48.png',
+    logoURI: 'https://tokens.1inch.io/0xA0b86991c6218b36c1d19d4a2e9eb0ce3606eb48.png',
   },
   {
     address: '0xdac17f958d2ee523a2206206994597c13d831ec7',
