@@ -43,7 +43,7 @@ export default function About() {
                 <span className="text-2xl">💸</span>
               </div>
               <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-2">
-                Receive Tips
+                Receive Payments
               </h3>
               <p className="text-gray-600 dark:text-gray-300">
                 Accept any ERC-20 token from Ethereum, Base, Optimism, or USDC/XLM from Stellar.
@@ -94,7 +94,7 @@ export default function About() {
                   ⚡ Zero Gas Fees
                 </h3>
                 <p className="text-gray-600 dark:text-gray-300">
-                  Fusion+ handles all swaps gaslessly. Keep more of your tip value.
+                  Fusion+ handles all swaps gaslessly. Keep more of your payment value.
                 </p>
               </div>
               <div className="p-6 border border-gray-200 dark:border-gray-700 rounded-xl">
@@ -194,7 +194,7 @@ export default function About() {
               Ready to Start Receiving Tips?
             </h2>
             <p className="text-xl text-gray-600 dark:text-gray-300 mb-8">
-              Create your universal tip jar in seconds. No setup fees, no monthly costs.
+              Create your universal payment jar in seconds. No setup fees, no monthly costs.
             </p>
             <button
               onClick={() => push('/create')}

@@ -41,7 +41,7 @@ export default function TipJarSuccess({ tipJarId, tipJarData, onCreateAnother }:
       try {
         await navigator.share({
           title: `${tipJarData.name} - SwapJar`,
-          text: `Send tips to ${tipJarData.name} in any token!`,
+          text: `Send payments to ${tipJarData.name} in any token!`,
           url: tipJarUrl,
         });
       } catch (error) {
@@ -64,7 +64,7 @@ export default function TipJarSuccess({ tipJarId, tipJarData, onCreateAnother }:
           SwapJar Created Successfully!
         </h1>
         <p className="text-xl text-gray-600 dark:text-gray-300">
-          Your universal tip jar is ready to receive tips from any blockchain
+          Your universal payment jar is ready to receive tokens
         </p>
       </div>
 
@@ -107,7 +107,7 @@ export default function TipJarSuccess({ tipJarId, tipJarData, onCreateAnother }:
               <ul className="text-sm text-blue-700 dark:text-blue-300 space-y-1">
                 <li>• Accept tips from {tipJarData.chains.length}+ blockchain{tipJarData.chains.length !== 1 ? 's' : ''}</li>
                 <li>• Auto-swap to {tipJarData.recipientToken}</li>
-                <li>• Zero gas fees for you</li>
+                <li>• Gas fees covered by Fusion+</li>
                 <li>• Real-time notifications</li>
                 <li>• Powered by 1inch Fusion+</li>
               </ul>
@@ -177,7 +177,7 @@ export default function TipJarSuccess({ tipJarId, tipJarData, onCreateAnother }:
                   💼 LinkedIn
                 </a>
                 <a
-                  href={`https://t.me/share/url?url=${encodeURIComponent(tipJarUrl)}&text=Check out my SwapJar! Send tips in any token 💰`}
+                  href={`https://t.me/share/url?url=${encodeURIComponent(tipJarUrl)}&text=Check out my SwapJar! Send payments in any token 💰`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="px-3 py-2 bg-blue-400 text-white rounded text-xs text-center hover:bg-blue-500 transition-colors"
@@ -222,7 +222,7 @@ export default function TipJarSuccess({ tipJarId, tipJarData, onCreateAnother }:
             </li>
             <li className="flex items-start">
               <span className="bg-blue-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs mr-3 mt-0.5">4</span>
-              Zero gas fees for you!
+              Gas fees covered by Fusion+!
             </li>
           </ol>
         </div>

@@ -128,7 +128,7 @@ const CreatePage = () => {
         walletAddress: formData.walletAddress,
         recipientToken: formData.recipientToken,
         chains: formData.selectedChains,
-        customMessage: formData.customMessage || `Send tips in any token, I'll receive ${formData.recipientToken}`,
+        customMessage: formData.customMessage || `Send payments in any token, I'll receive ${formData.recipientToken}`,
         successMessage: formData.successMessage,
         customization: {
           primaryColor: '#3B82F6', // Default blue
@@ -287,7 +287,7 @@ const CreatePage = () => {
                       )}
                     </select>
                     <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                      All tips will be automatically converted to this currency
+                      All payments will be automatically converted to this currency
                     </p>
                   </div>
 
@@ -322,7 +322,7 @@ const CreatePage = () => {
                     <textarea
                       value={formData.customMessage}
                       onChange={(e) => handleInputChange('customMessage', e.target.value)}
-                      placeholder={`Send tips in any token, I'll receive ${formData.recipientToken}`}
+                      placeholder={`Send payments in any token, I'll receive ${formData.recipientToken}`}
                       rows={5}
                       className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white resize-none"
                     />
@@ -404,7 +404,7 @@ const CreatePage = () => {
                       {formData.displayName || 'Your Fund'}
                     </h3>
                     <p className="text-gray-600 dark:text-gray-300 mb-4">
-                      {formData.customMessage || `Send tips in any token, I'll receive ${formData.recipientToken}`}
+                      {formData.customMessage || `Send payments in any token, I'll receive ${formData.recipientToken}`}
                     </p>
                     <div className="space-y-2">
                       <button className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg text-sm">
@@ -422,9 +422,9 @@ const CreatePage = () => {
                     ✨ Your SwapJar will:
                   </h4>
                   <ul className="text-sm text-blue-700 dark:text-blue-300 space-y-1">
-                    <li>• Accept tips from {formData.selectedChains.length}+ blockchain{formData.selectedChains.length !== 1 ? 's' : ''}</li>
+                    <li>• Accept payments from {formData.selectedChains.length}+ blockchain{formData.selectedChains.length !== 1 ? 's' : ''}</li>
                     <li>• Auto-convert to {formData.recipientToken}</li>
-                    <li>• Zero gas fees for you</li>
+                    <li>• Gas fees covered by Fusion+</li>
                     <li>• Real-time notifications</li>
                     <li>• Powered by 1inch Fusion+</li>
                   </ul>

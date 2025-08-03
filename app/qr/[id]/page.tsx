@@ -72,7 +72,7 @@ export default function QRPage() {
       try {
         await navigator.share({
           title: `${tipJarData.name} - SwapJar`,
-          text: `Send tips to ${tipJarData.name} in any token!`,
+          text: `Send payments to ${tipJarData.name} in any token!`,
           url: tipJarUrl,
         });
       } catch (error) {
@@ -133,7 +133,7 @@ export default function QRPage() {
             QR Code for {tipJarData.name}
           </h1>
           <p className="text-gray-600 dark:text-gray-300">
-            Scan to send tips in any token
+            Scan to send payments in any token
           </p>
         </div>
 
@@ -204,7 +204,7 @@ export default function QRPage() {
             <ul className="text-sm text-blue-700 dark:text-blue-300 space-y-1">
               <li>• Scan with any QR code reader or camera app</li>
               <li>• Opens the tip jar page in your browser</li>
-              <li>• Connect wallet and send tips in any token</li>
+              <li>• Connect wallet and send payments in any token</li>
               <li>• Recipient automatically receives {tipJarData.recipientToken}</li>
             </ul>
           </div>

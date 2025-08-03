@@ -6,15 +6,9 @@
 
 "Here's a popular creator's tip jar. They accept ETH on Ethereum only. But look what happens when supporters try to tip them:"
 
-**[Show screenshots of frustrated users]**
-- "I only have USDC on Base, can't tip"
-- "I have SOL but you only take ETH"
-- "Gas fees are $20, my tip is only $5"
-- "I sent you a memecoin, hope you don't mind converting it"
+Start with: https://app.1inch.io/swap?src=1:ETH
 
-"This is the **multi-chain fragmentation problem**. Crypto has evolved into a multi-chain ecosystem, but tipping is stuck in single-chain silos."
-
-### The Three Critical Market Gaps
+## The Three Critical Market Gaps
 
 **[Show infographic: Current State vs Ideal State]**
 

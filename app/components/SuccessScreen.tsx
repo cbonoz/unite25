@@ -67,7 +67,7 @@ export default function SuccessScreen({
       <p className="text-gray-600 dark:text-gray-300 mb-6">
         {crossChainTips.length > 0
           ? `Your ${crossChainTips[0]?.token || 'tokens'} have been bridged to Stellar. The recipient will receive ${recipientToken} shortly.`
-          : `Your tip is being processed via 1inch Fusion+. The recipient will receive ${recipientToken} shortly.`
+          : `Your payment is being processed via 1inch Fusion+. The recipient will receive ${recipientToken} shortly.`
         }
       </p>
 

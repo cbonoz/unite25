@@ -192,7 +192,7 @@ export default function TipForm({
       {/* Amount Input */}
       <div className="mb-6">
         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-          Tip Amount {useExistingUSDC ? '(from your USDC balance)' : ''}
+          Payment Amount {useExistingUSDC ? '(from your USDC balance)' : ''}
         </label>
         <div className="relative">
           <input

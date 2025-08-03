@@ -27,7 +27,7 @@ export default function WalletConnection({
           Connect Your Wallet
         </h3>
         <p className="text-gray-600 dark:text-gray-300 mb-4">
-          Connect your wallet to send tips via 1inch Fusion+
+          Connect your wallet to send payments via 1inch Fusion+
         </p>
         <button
           onClick={onConnect}

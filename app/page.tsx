@@ -17,7 +17,7 @@ export default function Home() {
       <div className="py-4">
         <div className="text-center max-w-5xl mx-auto">
           <h1 className="text-5xl md:text-6xl font-bold text-gray-800 dark:text-white mb-6 mt-6 font-serif">
-            Receive tips in <span className="text-blue-600">any token</span> from{" "}
+            Receive payments in <span className="text-blue-600">any token</span> from{" "}
             <span className="text-purple-600">any chain</span>*
           </h1>
           <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 leading-relaxed">
@@ -28,7 +28,7 @@ export default function Home() {
             <button className="px-8 py-4 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors text-lg font-semibold"
             onClick={goToCreate}
             >
-              Create Your Tip Jar
+              Create Your Payment Jar
             </button>
             <button
               onClick={() => window.open(siteConfig.youtubeUrl, '_blank')}
@@ -61,7 +61,7 @@ export default function Home() {
                 Universal Compatibility
               </h3>
               <p className="text-gray-600 dark:text-gray-300">
-                Accept tips from any supported blockchain with one simple link.
+                Accept payments from any supported blockchain with one simple link.
               </p>
             </div>
             <div className="text-center p-6">
@@ -72,7 +72,7 @@ export default function Home() {
                 Zero Gas Fees
               </h3>
               <p className="text-gray-600 dark:text-gray-300">
-                Keep more of your tip value with gasless swaps via Fusion+.
+                Keep more of your payment value with gasless swaps via Fusion+.
               </p>
             </div>
             <div className="text-center p-6">
