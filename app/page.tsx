@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import Header from './components/Header';
+import AppLayout from './components/AppLayout';
 import { siteConfig } from './siteConfig';
 
 export default function Home() {
@@ -12,23 +12,9 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 relative">
-      {/* Background Image Overlay */}
-      <div
-        className="absolute inset-0 opacity-25 bg-cover bg-center bg-no-repeat"
-        style={{
-          backgroundImage: "url('/coin_background.png')",
-        }}
-      />
-      {/* Optional: Additional overlay for better text readability */}
-      <div className="absolute inset-0 bg-white/20 dark:bg-black/30" />
-
-      {/* Content wrapper with relative positioning */}
-      <div className="relative z-10">
-        <Header />
-
+    <AppLayout backgroundImage="/coin_background.png">
       {/* Hero Section */}
-      <main className="container mx-auto px-6 py-12">
+      <div className="py-4">
         <div className="text-center max-w-5xl mx-auto">
           <h1 className="text-5xl md:text-6xl font-bold text-gray-800 dark:text-white mb-6 mt-6 font-serif">
             Receive tips in <span className="text-blue-600">any token</span> from{" "}
@@ -91,7 +77,7 @@ export default function Home() {
             </div>
             <div className="text-center p-6">
               <div className="w-16 h-16 bg-purple-100 dark:bg-purple-900 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-2xl">�</span>
+                <span className="text-2xl">💎</span>
               </div>
               <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-2">
                 Auto-Convert to Stablecoin
@@ -120,31 +106,7 @@ export default function Home() {
             </button>
           </div>
         </section>
-      </main>
-
-      {/* Footer */}
-      <footer className="bg-gray-800 dark:bg-gray-900 text-white py-12">
-        <div className="container mx-auto px-6">
-          <div className="flex flex-col md:flex-row justify-between items-center">
-            <div className="flex items-center space-x-2 mb-4 md:mb-0">
-              <span className="text-2xl">🪙</span>
-              <span className="text-xl font-bold">SwapJar</span>
-            </div>
-            <div className="flex space-x-6">
-              <button
-                onClick={() => push('/about')}
-                className="hover:text-blue-400 transition-colors"
-              >
-                About
-              </button>
-              <a href="#" className="hover:text-blue-400 transition-colors">Documentation</a>
-              <a href="#" className="hover:text-blue-400 transition-colors">GitHub</a>
-              <a href="#" className="hover:text-blue-400 transition-colors">Support</a>
-            </div>
-          </div>
-        </div>
-      </footer>
-      </div> {/* Close content wrapper */}
-    </div>
+      </div>
+    </AppLayout>
   );
 }
