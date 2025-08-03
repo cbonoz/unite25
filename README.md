@@ -13,7 +13,7 @@ Example page: https://swapjar.vercel.app/tip/bafkreibjvuqemz7ajpwabr62kmpgglx636
 
 Demo url: https://swapjar.vercel.app
 
-Demo video: https://youtu.be/uihvcALDKMM
+Demo video: https://youtu.be/RNcDxn0VMPw
 
 Example transaction through SwapJar from ETH sender to USDC recipient mainnet: https://etherscan.io/tx/0x1593bcff0fe781705a5274e875433d784675aaa7b86c83b27dbe9bec8d64b9f4
 
@@ -28,6 +28,15 @@ Built for the <a href="https://ethglobal.com/events/unite/home">EthGlobal Unite 
 -  **Stellar – Best use of Stellar x 1inch**
 
 ---
+
+<!--
+SwapJar: a prototype payment collection platform for creators, fundraisers, and freelancers
+
+Demo url: https://swapjar.vercel.app
+
+See more information on the github here: https://github.com/cbonoz/unite25
+
+ -->
 
 <!-- ### Discussion of existing solutions and why they fall short -->
 
