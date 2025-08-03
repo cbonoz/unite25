@@ -7,7 +7,7 @@
 
 **Receive tips in *any* token from *any* chain, automatically swapped to your favorite stablecoin via 1inch Fusion+.**
 
-SwapJar is a crypto-native tip jar generator for creators, freelancers, and DAOs. With one simple link, anyone can send tips in any token — even from non-EVM chains like **Stellar** — and the receiver will automatically get their chosen **stablecoin** (USDC, DAI, etc.) using **1inch Fusion+** swaps.
+SwapJar is a crypto-native tip jar generator for creators, freelancers, and DAOs. With one simple link, anyone can send payments in any token — even from non-EVM chains like **Stellar** — and the receiver will automatically get their chosen **stablecoin** (USDC, DAI, etc.) using **1inch Fusion+** swaps.
 
 Example page: http://localhost:3000/tip/bafkreie45x6lgjxn6zgdeyxsmwiaprnol3lmw4rkho2hrh6zwoxaj4354q?created=true
 
@@ -68,7 +68,7 @@ Stretch goals (not hard requirements):
 
 SwapJar solves these problems by creating a **universal, gasless tipping experience** powered by 1inch Fusion+:
 
-**🎯 One Link, Any Token**: Recipients create a single shareable link that accepts tips in ANY token from multiple chains (Ethereum, Base, Optimism, Stellar), removing blockchain complexity for supporters.
+**🎯 One Link, Any Token**: Recipients create a single shareable link that accepts payments in ANY token from multiple chains (Ethereum, Base, Optimism, Stellar), removing blockchain complexity for supporters.
 
 **⚡ Gasless Auto-Swaps**: Using 1inch Fusion+, all incoming tips are automatically swapped to the recipient's preferred stablecoin without them paying any gas fees, ensuring they keep 100% of the tip value.
 

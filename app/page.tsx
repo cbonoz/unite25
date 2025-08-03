@@ -72,7 +72,7 @@ export default function Home() {
                 Zero Gas Fees
               </h3>
               <p className="text-gray-600 dark:text-gray-300">
-                Keep 100% of your tip value with gasless swaps via Fusion+.
+                Keep more of your tip value with gasless swaps via Fusion+.
               </p>
             </div>
             <div className="text-center p-6">
@@ -96,7 +96,7 @@ export default function Home() {
               Ready to Start Receiving Payments?
             </h2>
             <p className="text-xl text-gray-600 dark:text-gray-300 mb-8">
-              Create your universal tip jar link in seconds. No setup fees, no monthly costs.
+              Create your universal payment link in seconds. No setup fees, no monthly costs.
             </p>
             <button
               onClick={goToCreate}

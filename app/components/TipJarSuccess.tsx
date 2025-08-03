@@ -161,7 +161,7 @@ export default function TipJarSuccess({ tipJarId, tipJarData, onCreateAnother }:
               </p>
               <div className="grid grid-cols-3 gap-2">
                 <a
-                  href={`https://twitter.com/intent/tweet?text=Check out my new SwapJar! Send me tips in any token and I'll receive ${tipJarData.recipientToken} ⚡&url=${encodeURIComponent(tipJarUrl)}&hashtags=SwapJar,crypto,tips`}
+                  href={`https://twitter.com/intent/tweet?text=Check out my new SwapJar! Send tokens and I'll receive ${tipJarData.recipientToken} ⚡&url=${encodeURIComponent(tipJarUrl)}&hashtags=SwapJar,crypto,tips`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="px-3 py-2 bg-blue-500 text-white rounded text-xs text-center hover:bg-blue-600 transition-colors"
@@ -210,7 +210,7 @@ export default function TipJarSuccess({ tipJarId, tipJarData, onCreateAnother }:
           <ol className="text-sm text-gray-600 dark:text-gray-300 space-y-2">
             <li className="flex items-start">
               <span className="bg-blue-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs mr-3 mt-0.5">1</span>
-              Someone sends you tips in any token
+              Someone sends you payments in any token
             </li>
             <li className="flex items-start">
               <span className="bg-blue-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs mr-3 mt-0.5">2</span>

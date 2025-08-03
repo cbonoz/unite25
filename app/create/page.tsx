@@ -186,7 +186,7 @@ const CreatePage = () => {
               Create Your SwapJar
             </h1>
             <p className="text-xl text-gray-600 dark:text-gray-300">
-              Set up your universal tip jar link in just a few steps
+              Set up your universal payment link in just a few steps
             </p>
           </div>
 
@@ -207,7 +207,7 @@ const CreatePage = () => {
                         walletAddress: "0x742d35Cc6634C0532925a3b8D4020A2E2B1e8d4B",
                         recipientToken: 'USDC',
                         selectedChains: [SUPPORTED_CHAINS.ETHEREUM, 'stellar' as ChainId],
-                        customMessage: "Help us celebrate our special day! Your tips will go toward our honeymoon in Italy. We accept any token from any chain - it all converts to USDC automatically! 🇮🇹✨",
+                        customMessage: "Help us celebrate our special day! Your contributions will go toward our honeymoon in Italy. We accept any token from any chain - it all converts to USDC automatically! 🇮🇹✨",
                         successMessage: "Thank you for celebrating with us! ❤️ Your donation means the world to us.",
                       });
                       setErrors({});
@@ -228,7 +228,7 @@ const CreatePage = () => {
                       type="text"
                       value={formData.displayName}
                       onChange={(e) => handleInputChange('displayName', e.target.value)}
-                      placeholder="e.g., Chris's Tips"
+                      placeholder="e.g., My creator fund"
                       className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white ${
                         errors.displayName ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
                       }`}
@@ -401,14 +401,14 @@ const CreatePage = () => {
                   <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-6">
                     <div className="text-4xl mb-4">🪙</div>
                     <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-2">
-                      {formData.displayName || 'Your Tips'}
+                      {formData.displayName || 'Your Fund'}
                     </h3>
                     <p className="text-gray-600 dark:text-gray-300 mb-4">
                       {formData.customMessage || `Send tips in any token, I'll receive ${formData.recipientToken}`}
                     </p>
                     <div className="space-y-2">
                       <button className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg text-sm">
-                        Send Tip
+                        Send Tokens
                       </button>
                       <p className="text-xs text-gray-500 dark:text-gray-400">
                         Supports {formData.selectedChains.length} blockchain{formData.selectedChains.length !== 1 ? 's' : ''}

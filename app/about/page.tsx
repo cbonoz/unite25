@@ -17,7 +17,7 @@ export default function About() {
             About SwapJar
           </h1>
           <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 leading-relaxed">
-            The universal tip jar that accepts any token from any supported chain and automatically converts it to your preferred stablecoin.
+            The universal payment jar that accepts any token from any supported chain and automatically converts it to your preferred stablecoin.
           </p>
         </div>
 
@@ -94,7 +94,7 @@ export default function About() {
                   ⚡ Zero Gas Fees
                 </h3>
                 <p className="text-gray-600 dark:text-gray-300">
-                  Fusion+ handles all swaps gaslessly. You keep 100% of your tip value.
+                  Fusion+ handles all swaps gaslessly. Keep more of your tip value.
                 </p>
               </div>
               <div className="p-6 border border-gray-200 dark:border-gray-700 rounded-xl">
