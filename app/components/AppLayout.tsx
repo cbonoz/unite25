@@ -53,7 +53,7 @@ export default function AppLayout({ children, className = '', backgroundImage }:
               </div>
               <p className="text-gray-400 mb-2">Powered by 1inch Fusion+</p>
               <p className="text-gray-500 text-xs">
-                *Chains enabled: {CHAIN_OPTIONS.map(chain => chain.name).join(', ')}
+                *Chains currently enabled: {CHAIN_OPTIONS.map(chain => chain.name).join(', ')}
               </p>
               {/* <p className="text-gray-400">Powered by 1inch Fusion+ • Built for ETHGlobal Unite 2025</p> */}
             </div>
