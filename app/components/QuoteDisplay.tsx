@@ -1,7 +1,190 @@
 import { useState, useEffect } from 'react';
-import { fetchSpotPriceQuote, formatQuoteDisplay, COMMON_TOKEN_ADDRESSES, type SpotPriceQuote, type QuoteError } from '../utils/quotes';
 import { getCrossChainQuote, isCrossChainSwapRequired, type CrossChainQuote, type CrossChainError } from '../utils/crosschain';
-import { type Token } from '../utils/oneinch';
+import { type Token, getPopularTokens } from '../utils/oneinch';
+import { fetchSpotPriceQuote, COMMON_TOKEN_ADDRESSES, type SpotPriceQuote, type QuoteError } from '../utils/quotes';
+
+// Helper component to handle async quote display
+function QuoteDisplayContent({
+  quote,
+  selectedToken,
+  recipientToken,
+  chainId
+}: {
+  quote: SpotPriceQuote;
+  selectedToken: Token;
+  recipientToken: string;
+  chainId: number;
+}) {
+  const [decimals, setDecimals] = useState<number>(18);
+  const [loading, setLoading] = useState(true);
+
+  // Smart formatting function that adjusts decimal places based on value magnitude
+  const formatSmartAmount = (amount: number): string => {
+    if (amount === 0) return '0';
+    if (amount >= 1000) return amount.toLocaleString(undefined, { maximumFractionDigits: 2 });
+    if (amount >= 10) return amount.toFixed(4);
+    if (amount >= 1) return amount.toFixed(6);
+    if (amount >= 0.01) return amount.toFixed(6);
+    if (amount >= 0.0001) return amount.toFixed(8);
+    // For very small amounts, use scientific notation if needed
+    if (amount < 0.0000001) return amount.toExponential(3);
+    return amount.toFixed(10);
+  };
+
+  // Calculate rate and normalized amounts directly from token info we have
+  const calculateQuoteData = (quote: SpotPriceQuote, srcToken: Token, dstDecimals: number) => {
+    try {
+      // Convert amounts using the actual token decimals we know
+      const srcAmountNormalized = parseFloat(quote.srcAmount) / Math.pow(10, srcToken.decimals);
+      const dstAmountNormalized = parseFloat(quote.dstAmount) / Math.pow(10, dstDecimals);
+
+      // Calculate rate (how much destination token per 1 source token)
+      const rate = dstAmountNormalized / srcAmountNormalized;
+
+      console.log('💱 Frontend rate calculation:', {
+        srcAmount: quote.srcAmount,
+        dstAmount: quote.dstAmount,
+        srcDecimals: srcToken.decimals,
+        dstDecimals,
+        srcAmountNormalized,
+        dstAmountNormalized,
+        calculatedRate: rate,
+        srcToken: srcToken.symbol,
+        dstToken: recipientToken
+      });
+
+      return {
+        rate,
+        dstAmountNormalized,
+        srcAmountNormalized
+      };
+    } catch (error) {
+      console.error('Error calculating quote data:', error);
+      return {
+        rate: 0,
+        dstAmountNormalized: 0,
+        srcAmountNormalized: 0
+      };
+    }
+  };
+
+  useEffect(() => {
+    const fetchDecimals = async () => {
+      try {
+        setLoading(true);
+
+        // For cross-chain scenarios, use standard decimals
+        if (recipientToken === 'XLM') {
+          setDecimals(7);
+          return;
+        }
+        if (recipientToken === 'STELLAR_USDC') {
+          setDecimals(6);
+          return;
+        }
+
+        // Fetch all tokens for this chain from 1inch API
+        const chainTokens = await getPopularTokens(chainId as any);
+
+        // Try to find the token in the API response and use its decimals
+        let foundToken: Token | undefined;
+
+        switch (recipientToken) {
+          case 'USDC':
+            foundToken = chainTokens.find((token: Token) =>
+              token.symbol === 'USDC'
+            );
+            break;
+
+          case 'DAI':
+            // Look for exact DAI match first, avoid compound tokens like cDAI
+            foundToken = chainTokens.find((token: Token) =>
+              token.symbol === 'DAI' && !token.name?.toLowerCase().includes('compound')
+            );
+            break;
+
+          case 'USDT':
+            foundToken = chainTokens.find((token: Token) =>
+              token.symbol === 'USDT'
+            );
+            break;
+
+          case 'ETH':
+            foundToken = chainTokens.find((token: Token) =>
+              token.symbol === 'ETH' || token.symbol === 'WETH'
+            );
+            break;
+        }
+
+        if (foundToken?.decimals !== undefined) {
+          console.log(`✅ Found ${recipientToken} token with ${foundToken.decimals} decimals from API:`, foundToken);
+          setDecimals(foundToken.decimals);
+        } else {
+          console.log(`⚠️ Token ${recipientToken} not found in API response, using fallback decimals`);
+          // Fallback to standard decimals
+          switch (recipientToken) {
+            case 'USDC':
+            case 'USDT':
+              setDecimals(6);
+              break;
+            case 'DAI':
+            case 'ETH':
+              setDecimals(18);
+              break;
+            case 'XLM':
+              setDecimals(7);
+              break;
+            default:
+              setDecimals(18);
+          }
+        }
+      } catch (error) {
+        console.error('❌ Error fetching token decimals from API:', error);
+        // Fallback to standard decimals
+        switch (recipientToken) {
+          case 'USDC':
+          case 'USDT':
+            setDecimals(6);
+            break;
+          case 'DAI':
+          case 'ETH':
+            setDecimals(18);
+            break;
+          case 'XLM':
+            setDecimals(7);
+            break;
+          default:
+            setDecimals(18);
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDecimals();
+  }, [recipientToken, chainId]);
+
+  if (loading) {
+    return (
+      <div className="text-green-600 dark:text-green-400 text-sm">
+        Loading quote details...
+      </div>
+    );
+  }
+
+  const quoteData = calculateQuoteData(quote, selectedToken, decimals);
+
+  return (
+    <>
+      <p className="text-green-800 dark:text-green-200 text-sm">
+        <strong>Rate:</strong> 1 {selectedToken.symbol} ≈ {formatSmartAmount(quoteData.rate)} {recipientToken}
+      </p>
+      <p className="text-green-700 dark:text-green-300 text-xs">
+        You&apos;ll receive ≈ {formatSmartAmount(quoteData.dstAmountNormalized)} {recipientToken}
+      </p>
+    </>
+  );
+}
 
 interface QuoteDisplayProps {
   selectedToken: Token | null;
@@ -26,35 +209,64 @@ export default function QuoteDisplay({
   const [isCrossChain, setIsCrossChain] = useState(false);
 
   // Get destination token address based on recipient token preference
-  // Use the actual token addresses from the loaded tokens instead of hardcoded addresses
-  const getDestinationTokenAddress = (recipientToken: string): string | null => {
+  // Fetch tokens from 1inch API for the specific chain to get accurate addresses
+  const getDestinationTokenAddress = async (recipientToken: string): Promise<string | null> => {
+    console.log('🎯 Looking for destination token:', {
+      recipientToken,
+      chainId
+    });
+
     // For cross-chain scenarios (XLM, STELLAR_USDC), we don't need destination addresses
     if (recipientToken === 'XLM' || recipientToken === 'STELLAR_USDC') {
       return null;
     }
 
-    // Try to find the token in the available tokens first (most reliable)
-    switch (recipientToken) {
-      case 'USDC':
-        const usdcToken = availableTokens.find((token: Token) =>
-          token.symbol === 'USDC' || token.symbol === 'USD Coin'
-        );
-        if (usdcToken) return usdcToken.address;
-        break;
+    try {
+      // Fetch all tokens for this chain from 1inch API
+      const chainTokens = await getPopularTokens(chainId as any);
+      console.log(`📋 Fetched ${chainTokens.length} tokens for chain ${chainId}`);
 
-      case 'DAI':
-        const daiToken = availableTokens.find((token: Token) =>
-          token.symbol === 'DAI' || token.name?.includes('Dai')
-        );
-        if (daiToken) return daiToken.address;
-        break;
+      // Try to find the token in the API response (most reliable)
+      // Prioritize exact symbol matches to avoid confusion with derivative tokens
+      let foundToken: Token | undefined;
 
-      case 'USDT':
-        const usdtToken = availableTokens.find((token: Token) =>
-          token.symbol === 'USDT' || token.symbol === 'Tether'
-        );
-        if (usdtToken) return usdtToken.address;
-        break;
+      switch (recipientToken) {
+        case 'USDC':
+          foundToken = chainTokens.find((token: Token) =>
+            token.symbol === 'USDC'
+          );
+          break;
+
+        case 'DAI':
+          // Look for exact DAI match first, avoid compound tokens like cDAI
+          foundToken = chainTokens.find((token: Token) =>
+            token.symbol === 'DAI' && !token.name?.toLowerCase().includes('compound')
+          );
+          break;
+
+        case 'USDT':
+          foundToken = chainTokens.find((token: Token) =>
+            token.symbol === 'USDT'
+          );
+          break;
+
+        case 'ETH':
+          // For ETH, look for WETH on non-mainnet chains or native ETH
+          foundToken = chainTokens.find((token: Token) =>
+            token.symbol === 'ETH' || token.symbol === 'WETH'
+          );
+          break;
+      }
+
+      if (foundToken) {
+        console.log(`✅ Found ${recipientToken} token from API:`, foundToken);
+        return foundToken.address;
+      }
+
+      console.log(`⚠️ Token ${recipientToken} not found in API response, using fallback`);
+    } catch (error) {
+      console.error('❌ Error fetching tokens from API:', error);
+      console.log('⚠️ Falling back to hardcoded addresses');
     }
 
     // Fallback to hardcoded addresses as last resort
@@ -106,7 +318,61 @@ export default function QuoteDisplay({
   };
 
   // Get proper decimals for destination token
-  const getDestinationTokenDecimals = (recipientToken: string): number => {
+  const getDestinationTokenDecimals = async (recipientToken: string): Promise<number> => {
+    console.log('🔢 Getting decimals for recipient token:', recipientToken);
+
+    // For cross-chain scenarios, use standard decimals
+    if (recipientToken === 'XLM') return 7; // XLM has 7 decimal places
+    if (recipientToken === 'STELLAR_USDC') return 6; // USDC typically has 6 decimal places
+
+    try {
+      // Fetch all tokens for this chain from 1inch API
+      const chainTokens = await getPopularTokens(chainId as any);
+
+      // Try to find the token in the API response and use its decimals
+      // Prioritize exact symbol matches to avoid confusion with derivative tokens
+      let foundToken: Token | undefined;
+
+      switch (recipientToken) {
+        case 'USDC':
+          foundToken = chainTokens.find((token: Token) =>
+            token.symbol === 'USDC'
+          );
+          break;
+
+        case 'DAI':
+          // Look for exact DAI match first, avoid compound tokens like cDAI
+          foundToken = chainTokens.find((token: Token) =>
+            token.symbol === 'DAI' && !token.name?.toLowerCase().includes('compound')
+          );
+          break;
+
+        case 'USDT':
+          foundToken = chainTokens.find((token: Token) =>
+            token.symbol === 'USDT'
+          );
+          break;
+
+        case 'ETH':
+          foundToken = chainTokens.find((token: Token) =>
+            token.symbol === 'ETH' || token.symbol === 'WETH'
+          );
+          break;
+      }
+
+      if (foundToken?.decimals !== undefined) {
+        console.log(`✅ Found ${recipientToken} token with ${foundToken.decimals} decimals from API:`, foundToken);
+        return foundToken.decimals;
+      }
+
+      console.log(`⚠️ Token ${recipientToken} not found in API response, using fallback decimals`);
+    } catch (error) {
+      console.error('❌ Error fetching token decimals from API:', error);
+      console.log('⚠️ Falling back to standard decimals');
+    }
+
+    console.log(`⚠️ Using fallback decimals for ${recipientToken}`);
+    // Fallback to standard decimals
     switch (recipientToken) {
       case 'USDC':
       case 'USDT':
@@ -185,7 +451,15 @@ export default function QuoteDisplay({
         setQuote(null); // Clear regular quote
       } else {
         // Use regular 1inch quote for same-chain swaps
-        const dstTokenAddress = getDestinationTokenAddress(recipientToken);
+        const dstTokenAddress = await getDestinationTokenAddress(recipientToken);
+        console.log('🎯 Quote request details:', {
+          recipientToken,
+          dstTokenAddress,
+          chainId,
+          srcToken: selectedToken.address,
+          srcAmount: amountInWei
+        });
+
         if (!dstTokenAddress) {
           console.error('❌ Destination token not supported:', recipientToken, 'on chain', chainId);
           setError(null); // Don't show error in UI
@@ -272,18 +546,12 @@ export default function QuoteDisplay({
       {/* Regular 1inch Quote Display */}
       {quote && !isLoading && !isCrossChain && (
         <div className="mt-2 space-y-1">
-          <p className="text-green-800 dark:text-green-200 text-sm">
-            <strong>Rate:</strong> {formatQuoteDisplay(
-              quote,
-              selectedToken.symbol,
-              recipientToken,
-              selectedToken.decimals,
-              getDestinationTokenDecimals(recipientToken)
-            )}
-          </p>
-          <p className="text-green-700 dark:text-green-300 text-xs">
-            You&apos;ll receive ≈ {formatAmountDisplay(quote.dstAmount, getDestinationTokenDecimals(recipientToken))} {recipientToken}
-          </p>
+          <QuoteDisplayContent
+            quote={quote}
+            selectedToken={selectedToken}
+            recipientToken={recipientToken}
+            chainId={chainId}
+          />
           {quote.gasFee && parseFloat(quote.gasFee) > 0 && (
             <p className="text-green-600 dark:text-green-400 text-xs">
               Est. gas: {(parseFloat(quote.gasFee) / Math.pow(10, 18)).toFixed(6)} ETH

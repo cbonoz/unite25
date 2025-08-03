@@ -123,8 +123,40 @@ export async function getTokenMetadata(chainId: ChainId, tokenAddress: string): 
   }
 }
 
+// Token cache for browser storage
+const CACHE_DURATION = 15 * 60 * 1000; // 15 minutes
+const CACHE_KEY_PREFIX = 'tokens_cache_';
+
+interface CachedTokenData {
+  tokens: Token[];
+  timestamp: number;
+}
+
 export async function getPopularTokens(chainId: ChainId): Promise<Token[]> {
   console.log(`🔍 Fetching tokens from 1inch API for chain ${chainId}...`);
+
+  // Check browser cache first
+  const cacheKey = `${CACHE_KEY_PREFIX}${chainId}`;
+
+  if (typeof window !== 'undefined') {
+    try {
+      const cachedData = localStorage.getItem(cacheKey);
+      if (cachedData) {
+        const parsed: CachedTokenData = JSON.parse(cachedData);
+        const isExpired = Date.now() - parsed.timestamp > CACHE_DURATION;
+
+        if (!isExpired && parsed.tokens && parsed.tokens.length > 0) {
+          console.log(`✅ Using cached tokens for chain ${chainId} (${parsed.tokens.length} tokens)`);
+          return parsed.tokens;
+        } else if (isExpired) {
+          console.log(`⏰ Cache expired for chain ${chainId}, fetching fresh data`);
+          localStorage.removeItem(cacheKey);
+        }
+      }
+    } catch (error) {
+      console.warn('Cache read error:', error);
+    }
+  }
 
   try {
     const data = await apiRequest(`/tokens/${chainId}`);
@@ -139,10 +171,45 @@ export async function getPopularTokens(chainId: ChainId): Promise<Token[]> {
     }));
 
     console.log(`✅ Parsed ${tokens.length} tokens from API:`, tokens.slice(0, 5));
+
+    // Cache the results in browser storage
+    if (typeof window !== 'undefined' && tokens.length > 0) {
+      try {
+        const cacheData: CachedTokenData = {
+          tokens,
+          timestamp: Date.now()
+        };
+        localStorage.setItem(cacheKey, JSON.stringify(cacheData));
+        console.log(`💾 Cached ${tokens.length} tokens for chain ${chainId}`);
+      } catch (error) {
+        console.warn('Cache write error:', error);
+      }
+    }
+
     return tokens;
   } catch (error) {
     console.error('❌ Error fetching tokens from API, using fallback tokens:', error);
     return getFallbackTokens(chainId);
+  }
+}
+
+// Utility function to clear token cache (useful for debugging or force refresh)
+export function clearTokenCache(chainId?: ChainId) {
+  if (typeof window === 'undefined') return;
+
+  try {
+    if (chainId) {
+      const cacheKey = `${CACHE_KEY_PREFIX}${chainId}`;
+      localStorage.removeItem(cacheKey);
+      console.log(`🗑️ Cleared token cache for chain ${chainId}`);
+    } else {
+      // Clear all token caches
+      const keys = Object.keys(localStorage).filter(key => key.startsWith(CACHE_KEY_PREFIX));
+      keys.forEach(key => localStorage.removeItem(key));
+      console.log(`🗑️ Cleared all token caches (${keys.length} entries)`);
+    }
+  } catch (error) {
+    console.warn('Cache clear error:', error);
   }
 }
 

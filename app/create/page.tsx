@@ -1,7 +1,9 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { useRecipientTokens } from '../hooks/useRecipientTokens';
 import { useRouter } from 'next/navigation';
 import AppLayout from '../components/AppLayout';
 import TipJarSuccess from '../components/TipJarSuccess';
@@ -9,13 +11,13 @@ import { SUPPORTED_CHAINS, type ChainId } from '../utils/oneinch';
 import { createTipJar } from '@/app/utils/storage';
 import { siteConfig } from '@/app/siteConfig';
 
-interface FormData {
-  displayName: string;
+interface TipJarConfig {
+  title: string;
+  description: string;
   walletAddress: string;
-  recipientToken: 'USDC' | 'DAI' | 'USDT' | 'XLM' | 'STELLAR_USDC';
-  selectedChains: ChainId[];
+  recipientToken: string; // Changed from enum to string to support dynamic tokens
   customMessage: string;
-  successMessage: string;
+  maxAmount?: string;
 }
 
 interface CreatedTipJar {
@@ -23,16 +25,32 @@ interface CreatedTipJar {
   data: {
     name: string;
     walletAddress: string;
-    recipientToken: 'USDC' | 'DAI' | 'USDT' | 'XLM' | 'STELLAR_USDC';
+    recipientToken: string; // Updated to support dynamic tokens
     chains: ChainId[];
     customMessage: string;
     successMessage?: string;
   };
 }
 
+interface TipJarFormData {
+  displayName: string;
+  walletAddress: string;
+  recipientToken: string; // Changed from enum to string to support dynamic tokens
+  customMessage: string;
+  successMessage: string;
+  selectedChains: ChainId[];
+}
+
 const CreatePage = () => {
   const router = useRouter();
-  const [formData, setFormData] = useState<FormData>({
+
+  // Load recipient token options
+  const { tokens, groupedTokens, baseEthereumTokens, fetchedEthereumTokens, loading: tokensLoading, getDisplayName } = useRecipientTokens({
+    includeEthereumTokens: true,
+    maxEthereumTokens: 15
+  });
+
+  const [formData, setFormData] = useState<TipJarFormData>({
     displayName: '',
     walletAddress: '',
     recipientToken: 'USDC',
@@ -78,7 +96,7 @@ const CreatePage = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleInputChange = (field: keyof FormData, value: string | ChainId[] | boolean) => {
+  const handleInputChange = (field: keyof TipJarFormData, value: string | ChainId[] | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     // Clear error when user starts typing
     if (errors[field]) {
@@ -229,12 +247,44 @@ const CreatePage = () => {
                       value={formData.recipientToken}
                       onChange={(e) => handleInputChange('recipientToken', e.target.value)}
                       className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                      disabled={tokensLoading}
                     >
-                      <option value="USDC">USDC - USD Coin</option>
-                      <option value="DAI">DAI - MakerDAO</option>
-                      <option value="USDT">USDT - Tether</option>
-                      <option value="XLM">XLM - Stellar Lumens</option>
-                      <option value="STELLAR_USDC">USDC on Stellar</option>
+                      {tokensLoading ? (
+                        <option value="">Loading tokens...</option>
+                      ) : (
+                        <>
+                          {/* Popular Stablecoins */}
+                          {baseEthereumTokens.length > 0 && (
+                            <optgroup label="Popular Stablecoins">
+                              {baseEthereumTokens.map(token => (
+                                <option key={token.symbol} value={token.symbol}>
+                                  {token.symbol} - {token.name}
+                                </option>
+                              ))}
+                            </optgroup>
+                          )}
+
+                          {/* Other Ethereum Tokens */}
+                          {fetchedEthereumTokens.length > 0 && (
+                            <optgroup label="Other Ethereum Tokens">
+                              {fetchedEthereumTokens.map(token => (
+                                <option key={token.symbol} value={token.symbol}>
+                                  {token.symbol} - {token.name}
+                                </option>
+                              ))}
+                            </optgroup>
+                          )}
+
+                          {/* Stellar Assets */}
+                          <optgroup label="Stellar Network">
+                            {groupedTokens.stellar.map(token => (
+                              <option key={token.symbol} value={token.symbol}>
+                                {token.symbol} - {token.name}
+                              </option>
+                            ))}
+                          </optgroup>
+                        </>
+                      )}
                     </select>
                     <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                       All tips will be automatically converted to this currency

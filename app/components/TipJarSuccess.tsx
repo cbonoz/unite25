@@ -10,11 +10,10 @@ interface TipJarSuccessProps {
   tipJarData: {
     name: string;
     walletAddress: string;
-    recipientToken: 'USDC' | 'DAI' | 'USDT' | 'XLM' | 'STELLAR_USDC';
+    recipientToken: string; // Updated to support dynamic tokens
     chains: ChainId[];
     customMessage: string;
     successMessage?: string;
-    showSuccessMessage?: boolean;
   };
   onCreateAnother: () => void;
 }

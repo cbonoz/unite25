@@ -31,17 +31,13 @@ interface TipJarData {
   name: string;
   description?: string;
   walletAddress: string;
-  recipientToken: 'USDC' | 'DAI' | 'USDT' | 'XLM' | 'STELLAR_USDC';
+  recipientToken: string; // Updated to support dynamic tokens
   chains: ChainId[];
-  createdAt: string;
-  isActive: boolean;
+  createdAt?: string;
+  isActive?: boolean;
   customMessage?: string;
   successMessage?: string;
-  customization?: {
-    primaryColor?: string;
-    backgroundColor?: string;
-    logoUrl?: string;
-  };
+  customization?: any;
 }
 
 interface StellarTipResult {

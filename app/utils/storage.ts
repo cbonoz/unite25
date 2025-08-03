@@ -28,7 +28,7 @@ export interface TipJarConfig {
   name: string;
   description?: string;
   walletAddress: string;
-  recipientToken: 'USDC' | 'DAI' | 'USDT' | 'XLM' | 'STELLAR_USDC';
+  recipientToken: string; // Updated to support dynamic tokens
   chains: ChainId[];
   createdAt: string;
   isActive: boolean;
@@ -190,7 +190,7 @@ export async function createTipJar(data: {
   name: string;
   description?: string;
   walletAddress: string;
-  recipientToken: 'USDC' | 'DAI' | 'USDT' | 'XLM' | 'STELLAR_USDC';
+  recipientToken: string; // Updated to support dynamic tokens
   chains: ChainId[];
   customMessage?: string;
   successMessage?: string;

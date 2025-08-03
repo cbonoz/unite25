@@ -5,7 +5,19 @@ export interface SpotPriceQuote {
   dstToken: string;
   srcAmount: string;
   dstAmount: string;
-  rate: string;
+  // Token metadata from 1inch API
+  srcTokenInfo?: {
+    address: string;
+    symbol?: string;
+    name?: string;
+    decimals?: number;
+  };
+  dstTokenInfo?: {
+    address: string;
+    symbol?: string;
+    name?: string;
+    decimals?: number;
+  };
   gasFee: string;
   timestamp: number;
 }
@@ -65,7 +77,8 @@ export async function fetchSpotPriceQuote(
       dstToken: data.dstToken,
       srcAmount: data.srcAmount,
       dstAmount: data.dstAmount,
-      rate: data.rate,
+      srcTokenInfo: data.srcTokenInfo,
+      dstTokenInfo: data.dstTokenInfo,
       gasFee: data.gasFee,
       timestamp: data.timestamp
     };
@@ -76,36 +89,6 @@ export async function fetchSpotPriceQuote(
       error: 'Network Error',
       description: error instanceof Error ? error.message : 'Unknown error'
     };
-  }
-}
-
-/**
- * Format quote display with proper decimals
- */
-export function formatQuoteDisplay(
-  quote: SpotPriceQuote,
-  srcTokenSymbol: string,
-  dstTokenSymbol: string,
-  srcDecimals: number = 18,
-  dstDecimals: number = 18
-): string {
-  try {
-    // Use the pre-calculated rate from the API instead of recalculating
-    // The API already handles decimal conversion properly
-    const rate = parseFloat(quote.rate);
-
-    if (isNaN(rate) || rate === 0) {
-      // Fallback to manual calculation if rate is invalid
-      const srcAmount = parseFloat(quote.srcAmount) / Math.pow(10, srcDecimals);
-      const dstAmount = parseFloat(quote.dstAmount) / Math.pow(10, dstDecimals);
-      const calculatedRate = dstAmount / srcAmount;
-      return `1 ${srcTokenSymbol} ≈ ${calculatedRate.toFixed(4)} ${dstTokenSymbol}`;
-    }
-
-    return `1 ${srcTokenSymbol} ≈ ${rate.toFixed(4)} ${dstTokenSymbol}`;
-  } catch (error) {
-    console.error('Error formatting quote:', error);
-    return 'Quote formatting error';
   }
 }
 

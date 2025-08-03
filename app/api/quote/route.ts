@@ -19,7 +19,14 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    console.log('🔍 Proxying 1inch quote request:', { chainId, src, dst, amount });
+    console.log('🔍 Proxying 1inch quote request:', {
+      chainId,
+      src,
+      dst,
+      amount,
+      srcFormatted: src === '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE' ? 'ETH' : src,
+      dstFormatted: dst
+    });
 
     // Make request to 1inch API from server-side (no CORS issues)
     const quoteUrl = `${ONEINCH_AGGREGATION_API}/${chainId}/quote?src=${src}&dst=${dst}&amount=${amount}`;
@@ -48,40 +55,18 @@ export async function GET(request: NextRequest) {
     }
 
     const data = await response.json();
-    console.log('✅ 1inch quote received:', data);
+    console.log('✅ 1inch quote received:', JSON.stringify(data, null, 2));
 
-    // Calculate proper rate accounting for token decimals
-    let rate = '0';
-    if (data.dstAmount && amount) {
-      // Get token info for proper decimal handling
-      const srcDecimals = data.srcToken?.decimals || 18; // Default to 18 for ETH
-      const dstDecimals = data.dstToken?.decimals || 6;  // Default to 6 for USDC
-
-      // Convert amounts to human-readable numbers
-      const srcAmountNormalized = parseFloat(amount) / Math.pow(10, srcDecimals);
-      const dstAmountNormalized = parseFloat(data.dstAmount) / Math.pow(10, dstDecimals);
-
-      // Calculate rate (how much destination token per 1 source token)
-      rate = (dstAmountNormalized / srcAmountNormalized).toString();
-
-      console.log('💱 Rate calculation:', {
-        srcAmount: amount,
-        dstAmount: data.dstAmount,
-        srcDecimals,
-        dstDecimals,
-        srcAmountNormalized,
-        dstAmountNormalized,
-        calculatedRate: rate
-      });
-    }
-
-    // Transform the response to match our expected format
+    // Simply pass through the raw 1inch data with minimal processing
+    // Let the frontend handle decimal calculations with proper token info
     const transformedData = {
       srcToken: data.srcToken?.address || src,
       dstToken: data.dstToken?.address || dst,
       srcAmount: amount,
       dstAmount: data.dstAmount,
-      rate: rate,
+      // Include token metadata if available from 1inch
+      srcTokenInfo: data.srcToken,
+      dstTokenInfo: data.dstToken,
       gasFee: data.estimatedGas || '0',
       timestamp: Date.now(),
       originalData: data // Include original response for debugging
