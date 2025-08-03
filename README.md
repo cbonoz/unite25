@@ -9,19 +9,19 @@
 
 SwapJar is a crypto-native payment collection platform for creators, wedding funds, freelancers, and DAOs. With one simple IPFS-backed link, anyone can send payments in any token — even from non-EVM chains like **Stellar** — and the receiver will automatically get their chosen **stablecoin** (USDC, DAI, etc.) using **1inch Fusion+** cross-chain swaps.
 
-Example page: http://localhost:3000/tip/bafkreie45x6lgjxn6zgdeyxsmwiaprnol3lmw4rkho2hrh6zwoxaj4354q?created=true
+Example page: https://swapjar.vercel.app/tip/bafkreibjvuqemz7ajpwabr62kmpgglx636knrn4ybbffwtcwfsi3i5ypam
 
 Demo url: https://swapjar.vercel.app
 
 Demo video:
 
-Example transaction through SwapJar from ETH sender to USDC recipient mainnet: https://etherscan.io/tx/0xf5dcfbaa5709c811848bd922f506682db77204902e8390d7cf415ff34e44fd0b
+Example transaction through SwapJar from ETH sender to USDC recipient mainnet: https://etherscan.io/tx/0x1593bcff0fe781705a5274e875433d784675aaa7b86c83b27dbe9bec8d64b9f4
 
 Example swap + bridge payment through mainnet to stellar (mainnet): https://steexp.com/account/GAIFMUVXX73LCIC7RWEQJKNZF6DBI7VBOVMZUACHPZ3ZFBEYWL75IMIF/payments
 
 ### Going after the below prizes
 
-- ✅ **1inch – Full dApp using APIs**
+- ✅ **1inch – Fullstack dApp using APIs and Fusion+**
 - ✅ **1inch – Fusion+ Extension (non-EVM chain: Stellar)**
 - ✅ **Stellar – Best use of Stellar x 1inch**
 
@@ -136,4 +136,30 @@ We built a **Fusion+ extension** that allows users on **Stellar** to send paymen
 * https://ethglobal.com/events/unite/prizes#1inch
 * https://portal.1inch.dev/documentation/overview
 
-### Screenshots
+---
+
+## 📸 Screenshots
+
+### Home Page
+*Shows the main SwapJar home page*
+![SwapJar Home Page](img/home_page.png)
+
+### Creating a Payment Collection Link
+*Shows the setup process*
+![Create SwapJar](img/create_swap_jar.png)
+
+### QR Code Payment Page
+*Shows the payment collection interface*
+![SwapJar QR Payment Page](img/swap_jar_qr_payment_page.png)
+
+### Sending Payment to Page
+*Shows the payment sending process*
+![Sending Payment](img/sending_payment_to_page.png)
+
+### 1inch Fusion+ Swap Integration
+*Shows the swap functionality*
+![Example Swap Through 1inch Router](img/example_swap_through_1inch_router.png)
+
+### Stellar Bridge Integration
+*Shows the cross-chain bridge feature*
+![Swap Order Used for Stellar](img/swap_order_used_for_staller.png)
