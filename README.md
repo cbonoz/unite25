@@ -7,13 +7,13 @@
 
 **Receive payments across multiple chains, automatically swapped to your favorite stablecoin via 1inch Fusion+.**
 
-SwapJar is a crypto-native payment collection platform for creators, wedding funds, freelancers, and DAOs. With one simple IPFS-backed link, anyone can send payments in any token — including low fee chains like **Stellar** — and the receiver will automatically get their chosen **stablecoin** (USDC, DAI, etc.) using **1inch Fusion+** cross-chain swaps.
+SwapJar is a crypto-native payment collection platform for creators, fundraisers, and freelancers. With one simple IPFS-backed link, anyone can send payments in any token — including low fee chains like **Stellar** — and the receiver will automatically get their chosen **stablecoin** (USDC, DAI, etc.) using **1inch Fusion+** cross-chain swaps.
 
 Example page: https://swapjar.vercel.app/tip/bafkreibjvuqemz7ajpwabr62kmpgglx636knrn4ybbffwtcwfsi3i5ypam
 
 Demo url: https://swapjar.vercel.app
 
-Demo video:
+Demo video: https://youtu.be/uihvcALDKMM
 
 Example transaction through SwapJar from ETH sender to USDC recipient mainnet: https://etherscan.io/tx/0x1593bcff0fe781705a5274e875433d784675aaa7b86c83b27dbe9bec8d64b9f4
 
