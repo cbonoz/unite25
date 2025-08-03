@@ -11,6 +11,15 @@ export const SUPPORTED_CHAINS = {
   STELLAR: 'stellar' as const, // Special case for Stellar network
 } as const;
 
+export const CHAIN_OPTIONS = [
+  { id: SUPPORTED_CHAINS.ETHEREUM, name: 'Ethereum', color: 'bg-blue-500' },
+  // { id: SUPPORTED_CHAINS.BASE, name: 'Base', color: 'bg-blue-300' },
+  // { id: SUPPORTED_CHAINS.OPTIMISM, name: 'Optimism', color: 'bg-red-500' },
+  { id: SUPPORTED_CHAINS.POLYGON, name: 'Polygon', color: 'bg-purple-500' },
+  // { id: SUPPORTED_CHAINS.ARBITRUM, name: 'Arbitrum', color: 'bg-blue-400' },
+  { id: 'stellar' as ChainId, name: 'Stellar', color: 'bg-green-500' },
+];
+
 export type ChainId = typeof SUPPORTED_CHAINS[keyof typeof SUPPORTED_CHAINS];
 
 // Common interfaces

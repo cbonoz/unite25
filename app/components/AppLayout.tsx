@@ -1,4 +1,5 @@
 import Header from './Header';
+import { CHAIN_OPTIONS } from '../constants';
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -50,7 +51,10 @@ export default function AppLayout({ children, className = '', backgroundImage }:
                   This is a prototype built for ETHGlobal Unite 2025.
                 </p>
               </div>
-              <p className="text-gray-400">Powered by 1inch Fusion+</p>
+              <p className="text-gray-400 mb-2">Powered by 1inch Fusion+</p>
+              <p className="text-gray-500 text-xs">
+                *Chains enabled: {CHAIN_OPTIONS.map(chain => chain.name).join(', ')}
+              </p>
               {/* <p className="text-gray-400">Powered by 1inch Fusion+ • Built for ETHGlobal Unite 2025</p> */}
             </div>
           </div>

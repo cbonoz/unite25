@@ -10,6 +10,7 @@ import TipJarSuccess from '../components/TipJarSuccess';
 import { SUPPORTED_CHAINS, type ChainId } from '../utils/oneinch';
 import { createTipJar } from '@/app/utils/storage';
 import { siteConfig } from '@/app/siteConfig';
+import { CHAIN_OPTIONS } from '../constants';
 
 interface TipJarConfig {
   title: string;
@@ -62,14 +63,7 @@ const CreatePage = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [createdTipJar, setCreatedTipJar] = useState<CreatedTipJar | null>(null);
 
-  const chainOptions = [
-    { id: SUPPORTED_CHAINS.ETHEREUM, name: 'Ethereum', color: 'bg-blue-500' },
-    { id: SUPPORTED_CHAINS.BASE, name: 'Base', color: 'bg-blue-300' },
-    { id: SUPPORTED_CHAINS.OPTIMISM, name: 'Optimism', color: 'bg-red-500' },
-    { id: SUPPORTED_CHAINS.POLYGON, name: 'Polygon', color: 'bg-purple-500' },
-    // { id: SUPPORTED_CHAINS.ARBITRUM, name: 'Arbitrum', color: 'bg-blue-400' },
-    { id: 'stellar' as ChainId, name: 'Stellar', color: 'bg-green-500' },
-  ];
+
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -352,7 +346,7 @@ const CreatePage = () => {
                       Supported Blockchains *
                     </label>
                     <div className="grid grid-cols-2 gap-2">
-                      {chainOptions.map((chain) => (
+                      {CHAIN_OPTIONS.map((chain) => (
                         <button
                           key={chain.id}
                           type="button"
