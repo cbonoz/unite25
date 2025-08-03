@@ -237,7 +237,7 @@ async function executeStellarBridge(
           asset: Asset.native(), // XLM
           amount: bridgeAmount,
         }))
-        .addMemo(Memo.text(`Bridge: ${bridgeId}`))
+        .addMemo(Memo.text(bridgeId.slice(-20))) // Use last 20 chars to stay under 28-byte limit
         .setTimeout(30)
         .build();
     } else {
@@ -253,7 +253,7 @@ async function executeStellarBridge(
           asset: usdcAsset,
           amount: bridgeAmount,
         }))
-        .addMemo(Memo.text(`Bridge: ${bridgeId}`))
+        .addMemo(Memo.text(bridgeId.slice(-20))) // Use last 20 chars to stay under 28-byte limit
         .setTimeout(30)
         .build();
     }

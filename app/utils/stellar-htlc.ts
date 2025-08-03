@@ -98,7 +98,7 @@ export class StellarHTLC {
         asset,
         amount
       }))
-      .addMemo(Memo.text(memo))
+      .addMemo(memo && Buffer.from(memo, 'utf8').length <= 28 ? Memo.text(memo) : Memo.none())
       .setTimeout(300) // 5 minute timeout
       .build();
 
@@ -154,7 +154,7 @@ export class StellarHTLC {
       .addOperation(Operation.claimClaimableBalance({
         balanceId: claimableBalanceId
       }))
-      .addMemo(Memo.text(`Secret: ${secret}`)) // Include secret in memo for verification
+      .addMemo(Memo.text(secret.slice(-20))) // Use last 20 chars of secret to stay under 28-byte limit
       .setTimeout(300)
       .build();
 

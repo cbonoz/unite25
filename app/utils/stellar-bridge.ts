@@ -75,7 +75,7 @@ export class StellarBridge {
         destinationAddress: params.stellarReceiver,
         asset: params.stellarAsset,
         amount: stellarAmount,
-        memo: `Br${order.id.slice(-6)}` // Very short memo: "Br" + last 6 chars of ID
+        memo: order.id.slice(-8) // Use only last 8 chars to stay under 28-byte limit
       });
 
       // Update order with success
@@ -185,8 +185,15 @@ export class StellarBridge {
       }));
     }
 
+    // Validate memo length (Stellar text memos have a 28-byte limit)
+    let validatedMemo = memo;
+    if (memo && Buffer.from(memo, 'utf8').length > 28) {
+      console.warn(`⚠️ Memo too long (${Buffer.from(memo, 'utf8').length} bytes), truncating to 28 bytes`);
+      validatedMemo = memo.substring(0, 28);
+    }
+
     const transaction = transactionBuilder
-      .addMemo(Memo.text(memo))
+      .addMemo(validatedMemo ? Memo.text(validatedMemo) : Memo.none())
       .setTimeout(30)
       .build();
 
