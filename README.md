@@ -21,7 +21,7 @@ Example swap + bridge payment through mainnet to stellar (confirmed on mainnet):
 
 Built for the <a href="https://ethglobal.com/events/unite/home">EthGlobal Unite Defi Hackathon 2025</a>.
 
-### Going after the below prizes
+### Going after the below categories
 
 -  **1inch – Fullstack dApp using APIs and Fusion+**
 -  **1inch – Fusion+ Extension (non-EVM chain: Stellar)**
@@ -53,11 +53,11 @@ Current payment collection solutions in crypto face several critical limitations
 
 SwapJar solves these problems by creating a **universal, gasless payment collection experience** powered by 1inch Fusion+ and IPFS:
 
-**🎯 One Link, Any Token**: Recipients create a single IPFS-backed shareable link that accepts payments in ANY token from multiple chains (Ethereum, Base, Optimism, Stellar), removing blockchain complexity for supporters.
+**🎯 One Link, Any Token**: Recipients create a single IPFS-backed shareable link that accepts payments in almost any token from multiple chains (Ethereum, Polygon, Stellar), removing blockchain complexity for supporters.
 
 **🎨 Perfect for Creators & Events**: Whether you're a content creator collecting fan support, a couple setting up a wedding fund, or a freelancer receiving project payments, SwapJar handles multi-chain payments seamlessly.
 
-**⚡ Gasless Auto-Swaps**: Using 1inch Fusion+, all incoming payments are automatically swapped to the recipient's preferred stablecoin without them paying any gas fees, ensuring they keep 100% of the payment value.
+**⚡ Gasless Auto-Swaps**: Using 1inch Fusion+, all incoming payments are automatically swapped to the recipient's preferred stablecoin without gas fees, ensuring they keep more of the payment value.
 
 **🌉 Cross-Chain Bridge Integration**: We extended Fusion+ capabilities to support Stellar through our custom bridge integration with Circle CCTP and real-time price feeds, allowing XLM and Stellar USDC holders to seamlessly send payments to EVM users with automatic conversion rates.
 
@@ -142,6 +142,14 @@ We built a **Fusion+ extension** that allows users on **Stellar** to send paymen
 **💼 Freelancers**: Accept project payments in any token without worrying about volatility or manual conversion overhead.
 
 **🏢 DAOs & Organizations**: Collect contributions, grants, or membership fees across multiple chains with automatic stablecoin conversion.
+
+## Potential future work
+
+- **Advanced Stellar Integration**: Implement bidirectional swaps allowing EVM users to send payments that automatically convert to XLM on Stellar, plus support for additional Stellar assets and integration with Stellar's native DEX for better exchange rates.
+
+- **Enhanced Cross-Chain Support**: Expand beyond Stellar to support additional non-EVM chains like Solana, Cosmos, and Bitcoin Lightning Network, creating a truly universal payment collection platform that works across all major blockchain ecosystems.
+
+- **Smart Payment Routing**: Develop intelligent routing algorithms that automatically select the optimal path (direct swap vs. cross-chain bridge) based on real-time fees, liquidity, and execution speed to minimize costs and maximize value for recipients.
 
 ---
 
