@@ -19,6 +19,8 @@ Example transaction through SwapJar from ETH sender to USDC recipient mainnet: h
 
 Example swap + bridge payment through mainnet to stellar (mainnet): https://steexp.com/account/GAIFMUVXX73LCIC7RWEQJKNZF6DBI7VBOVMZUACHPZ3ZFBEYWL75IMIF/payments
 
+Built for the Ethglobal Unite Defi hackathon 2025.
+
 ### Going after the below prizes
 
 -  **1inch – Fullstack dApp using APIs and Fusion+**
