@@ -1,8 +1,9 @@
 <p align='center'>
   <img src="https://i.ibb.co/VcdPL0td/logo-3-2.png" width=400 />
 </p>
+<br/>
 
-# 🪙 SwapJar
+###  SwapJar
 
 **Receive payments in *any* token from *any* chain, automatically swapped to your favorite stablecoin via 1inch Fusion+.**
 
@@ -73,24 +74,6 @@ SwapJar solves these problems by creating a **universal, gasless payment collect
 - Use as many **1inch APIs** as possible: Fusion+ Swap, Price Feeds, Token Metadata, Wallet Balances, Web3
 - **Extend Fusion+ cross-chain swap support** to **Stellar** via custom bridge integration
 - Offer a simple and gas-efficient payment experience for both EVM and non-EVM users with **IPFS-backed** payment links
-
----
-
-
----
-
-## 🧱 Tech Stack
-
-| Layer       | Tech                              |
-|-------------|-----------------------------------|
-| Frontend    | React + Tailwind                  |
-| Backend     | Node.js / Fastify                 |
-| Storage     | IPFS for payment links            |
-| Blockchain  | Ethereum (Base, Optimism), Stellar |
-| API Integration | 1inch Fusion+, Price Feeds, Metadata, Balances, Web3 |
-| Cross-chain Bridge | Circle CCTP (USDC), Allbridge, Custom Stellar Bridge |
-| Wallet      | EVM WalletConnect + Stellar Freighter |
-| Infra       | Vercel + Express backend relay    |
 
 ---
 
