@@ -3,7 +3,7 @@
 </p>
 <br/>
 
-###  SwapJar
+# SwapJar
 
 **Receive payments in *any* token from *any* chain, automatically swapped to your favorite stablecoin via 1inch Fusion+.**
 
@@ -19,12 +19,12 @@ Example transaction through SwapJar from ETH sender to USDC recipient mainnet: h
 
 Example swap + bridge payment through mainnet to stellar (mainnet): https://steexp.com/account/GAIFMUVXX73LCIC7RWEQJKNZF6DBI7VBOVMZUACHPZ3ZFBEYWL75IMIF/payments
 
-
-## 🏆 Prize Tracks
+### Going after the below prizes
 
 - ✅ **1inch – Full dApp using APIs**
 - ✅ **1inch – Fusion+ Extension (non-EVM chain: Stellar)**
 - ✅ **Stellar – Best use of Stellar x 1inch**
+
 ---
 
 <!-- ### Discussion of existing solutions and why they fall short -->
