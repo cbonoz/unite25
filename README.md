@@ -21,9 +21,9 @@ Example swap + bridge payment through mainnet to stellar (mainnet): https://stee
 
 ### Going after the below prizes
 
-- ✅ **1inch – Fullstack dApp using APIs and Fusion+**
-- ✅ **1inch – Fusion+ Extension (non-EVM chain: Stellar)**
-- ✅ **Stellar – Best use of Stellar x 1inch**
+-  **1inch – Fullstack dApp using APIs and Fusion+**
+-  **1inch – Fusion+ Extension (non-EVM chain: Stellar)**
+-  **Stellar – Best use of Stellar x 1inch**
 
 ---
 
