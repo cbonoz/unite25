@@ -9,15 +9,15 @@
 
 SwapJar is a crypto-native payment collection platform for creators, fundraisers, and freelancers. With one simple IPFS-backed link, anyone can send payments in any token — including low fee chains like **Stellar** — and the receiver will automatically get their chosen **stablecoin** (USDC, DAI, etc.) using **1inch Fusion+** cross-chain swaps.
 
-Example page: https://swapjar.vercel.app/tip/bafkreibjvuqemz7ajpwabr62kmpgglx636knrn4ybbffwtcwfsi3i5ypam
+Example swap jar page: https://swapjar.vercel.app/tip/bafkreibjvuqemz7ajpwabr62kmpgglx636knrn4ybbffwtcwfsi3i5ypam
 
-Demo url: https://swapjar.vercel.app
+Demo url: https://swapjar.vercel.app (mainnet)
 
 Demo video: https://youtu.be/RNcDxn0VMPw
 
-Example transaction through SwapJar from ETH sender to USDC recipient mainnet: https://etherscan.io/tx/0x1593bcff0fe781705a5274e875433d784675aaa7b86c83b27dbe9bec8d64b9f4
+Example transaction through SwapJar from ETH sender to USDC recipient (confirmed on mainnet): https://etherscan.io/tx/0x1593bcff0fe781705a5274e875433d784675aaa7b86c83b27dbe9bec8d64b9f4
 
-Example swap + bridge payment through mainnet to stellar (mainnet): https://steexp.com/account/GAIFMUVXX73LCIC7RWEQJKNZF6DBI7VBOVMZUACHPZ3ZFBEYWL75IMIF/payments
+Example swap + bridge payment through mainnet to stellar (confirmed on mainnet): https://steexp.com/account/GAIFMUVXX73LCIC7RWEQJKNZF6DBI7VBOVMZUACHPZ3ZFBEYWL75IMIF/payments
 
 Built for the <a href="https://ethglobal.com/events/unite/home">EthGlobal Unite Defi Hackathon 2025</a>.
 
@@ -59,23 +59,23 @@ SwapJar solves these problems by creating a **universal, gasless payment collect
 
 **⚡ Gasless Auto-Swaps**: Using 1inch Fusion+, all incoming payments are automatically swapped to the recipient's preferred stablecoin without them paying any gas fees, ensuring they keep 100% of the payment value.
 
-**🌉 Cross-Chain Bridge Integration**: We extended Fusion+ capabilities to support Stellar through our custom bridge integration with Circle CCTP and Allbridge, allowing XLM and Stellar USDC holders to seamlessly send payments to EVM users.
+**🌉 Cross-Chain Bridge Integration**: We extended Fusion+ capabilities to support Stellar through our custom bridge integration with Circle CCTP and real-time price feeds, allowing XLM and Stellar USDC holders to seamlessly send payments to EVM users with automatic conversion rates.
 
-**💰 Stable Value Guarantee**: Recipients always receive stablecoins (USDC, DAI, USDT), eliminating volatility risk and providing predictable value.
+**💰 Stable Value Guarantee**: Recipients always receive stablecoins (USDC, DAI, USDT), eliminating volatility risk and providing predictable value regardless of what token was sent.
 
-**🔄 Intent-Based Architecture**: Leveraging Fusion+ intent-based swaps means better prices, MEV protection, and no failed transactions due to slippage.
+**🔄 Intent-Based Architecture**: Leveraging Fusion+ intent-based swaps means better prices, MEV protection, and no failed transactions due to slippage, ensuring optimal execution for all payments.
 
 ### Challenges we ran into
 
-**Cross-Chain Complexity**: Integrating Stellar with EVM chains required building custom bridge monitoring and CCTP integration. We had to handle different transaction finality models and ensure atomic cross-chain operations.
+**Cross-Chain Complexity**: Integrating Stellar with EVM chains required building custom bridge monitoring and real-time price feed integration. We had to handle different transaction finality models and ensure atomic cross-chain operations.
 
-**Fusion+ Integration**: Working with intent-based swaps required understanding the order flow and properly handling order settlement timing. We needed to build robust monitoring to track order status and handle edge cases.
+**Fusion+ Integration**: Working with intent-based swaps required understanding the order flow and properly handling order settlement timing. We needed to build robust monitoring to track order status and handle edge cases, plus implement fallback mechanisms when API quotas are exceeded.
 
-**Gas Optimization**: Even though Fusion+ is gasless for users, our backend relay service needed to optimize gas costs for posting intents and bridging operations while maintaining profitability.
+**Gas Optimization**: Even though Fusion+ is gasless for users, our backend relay service needed to optimize gas costs for posting intents and bridging operations while maintaining profitability and handling token address validation across multiple chains.
 
-**Wallet UX**: Supporting both EVM (WalletConnect) and Stellar (Freighter) wallets in a single interface required careful state management and error handling for different wallet connection patterns.
+**Wallet UX**: Supporting both EVM (WalletConnect) and Stellar (Freighter) wallets in a single interface required careful state management and error handling for different wallet connection patterns, plus cross-chain quote calculations.
 
-**Real-time Updates**: Building a responsive UI that shows swap progress across multiple chains and APIs required implementing WebSocket connections and proper state synchronization.
+**Real-time Price Feeds**: Building accurate cross-chain quotes required integrating multiple price sources (1inch, Stellar orderbook, CoinGecko fallback) and handling rate limiting, API failures, and ensuring quotes remain accurate across different market conditions.
 
 ---
 
@@ -96,15 +96,17 @@ SwapJar solves these problems by creating a **universal, gasless payment collect
 - Perfect for creator donation pages, wedding registries, freelance invoices
 
 ### 💸 2. Supporter Sends Payment
-- Supports *any* ERC-20 token from Ethereum, Optimism, Base
+- Supports *any* ERC-20 token from Ethereum, Optimism, Base, Polygon, Arbitrum
 - Supports **USDC or XLM from Stellar** via custom bridge integration
+- Real-time cross-chain quote calculation with multiple fallback price feeds
 
 ### 🔁 3. Tokens Swapped Automatically via Fusion+
-- **EVM tokens** are swapped via **1inch Fusion+** into stablecoin
-- **Stellar payments** are bridged to EVM (via Circle CCTP), then swapped via Fusion+
+- **EVM tokens** are swapped via **1inch Fusion+** into stablecoin with optimal execution
+- **Stellar payments** are bridged to EVM (via custom bridge/locking mechanism for XLM transfer), then swapped via Fusion+
+- Automatic fallback to regular 1inch swaps if Fusion+ is unavailable
 
 ### ✅ 4. Receiver Gets Stablecoin
-- Recipient receives stablecoin (e.g., USDC) in their wallet
+- Recipient receives their coin or stablecoin (e.g., USDC) of choice in their wallet
 
 ---
 
@@ -112,11 +114,11 @@ SwapJar solves these problems by creating a **universal, gasless payment collect
 
 | API                  | Use                                                |
 |----------------------|-----------------------------------------------------|
-| `Fusion+ Swap API`   | Used to create gasless, intent-based swaps          |
-| `Token Metadata API` | Shows logos, symbols, decimals                      |
-| `Price Quotes API`    | Used to calculate payment equivalent (e.g., $10 in any token) |
-| `Wallet Balances API`| Display real-time wallet status                    |
-| `Web3 API`           | Submit Fusion+ swap transactions from backend or relayer |
+| `Fusion+ Swap API`   | Used to create gasless, intent-based swaps with optimal execution |
+| `Token Metadata API` | Shows logos, symbols, decimals for all supported tokens |
+| `Price Quotes API`   | Used to calculate payment equivalent and cross-chain rates |
+| `Wallet Balances API`| Display real-time wallet status across multiple chains |
+| `Web3 API`           | Submit Fusion+ swap transactions from backend relay service |
 
 ---
 
