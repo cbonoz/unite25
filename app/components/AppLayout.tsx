@@ -48,7 +48,7 @@ export default function AppLayout({ children, className = '', backgroundImage }:
               <div className="bg-yellow-900/30 border border-yellow-600/50 rounded-lg p-4 mb-4 max-w-2xl mx-auto">
                 <p className="text-gray-300 font-semibold mb-1">⚠ Hackathon Prototype</p>
                 <p className="text-gray-200 text-sm">
-                  This is a prototype built for ETHGlobal Unite 2025.
+                  This is a prototype built for ETHGlobal Unite 2025. Meant for demo purposes only.
                 </p>
               </div>
               <p className="text-gray-400 mb-2">Powered by 1inch Fusion+</p>
