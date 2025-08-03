@@ -167,6 +167,10 @@ We built a **Fusion+ extension** that allows users on **Stellar** to send paymen
 *Shows the payment sending process*
 ![Sending Payment](img/sending_payment_to_page.png)
 
+### Payment Successful
+*Shows the successful payment confirmation*
+![Payment Successful](img/payment_successful.png)
+
 ### 1inch Fusion+ Swap Integration
 *Shows the swap functionality*
 ![Example Swap Through 1inch Router](img/example_swap_through_1inch_router.png)
